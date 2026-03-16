@@ -66,6 +66,13 @@ impl Orderbook {
             Side::Ask => self.asks.get_mut(&price)
         }
     }
+
+    pub fn remove_level(&mut self, price: Decimal, side : Side) {
+        match side {
+            Side::Bid => self.bids.remove(&price),
+            Side::Ask => self.asks.remove(&price)
+        };
+    }
 }
 
 #[cfg(test)]
@@ -188,5 +195,34 @@ mod tests {
         assert_eq!(asks_at_100[0].id, 4);
         assert_eq!(asks_at_100[1].id, 6);
 
+    }
+
+    #[test]
+    fn test_remove_level_orders() {
+        let mut book = Orderbook::new();
+
+        // Add first bid at 100
+        book.add_order(Order { id: 1, amount: dec!(1), price: dec!(100), side: Side::Bid });
+
+        // Add second bid at 100
+        book.add_order(Order { id: 2, amount: dec!(1), price: dec!(100), side: Side::Bid });
+        
+        // Add third bid at 101
+        book.add_order(Order { id: 3, amount: dec!(1), price: dec!(101), side: Side::Bid });
+
+        // Add first ask
+        book.add_order(Order { id: 4, amount: dec!(1), price: dec!(110), side: Side::Ask });
+
+        // Add second ask
+        book.add_order(Order { id: 5, amount: dec!(1), price: dec!(108), side: Side::Ask });
+
+        // Add third ask
+        book.add_order(Order { id: 6, amount: dec!(1), price: dec!(110), side: Side::Ask });
+
+
+        book.remove_level(dec!(100), Side::Bid);
+
+        let bids_at_100 =  book.get_level_mut(dec!(100), Side::Bid);
+        assert!(bids_at_100.is_none(), "Price level $100 should have been deleted from the BTreeMap");
     }
 }
