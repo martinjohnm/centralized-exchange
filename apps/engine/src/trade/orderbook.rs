@@ -1,18 +1,7 @@
 use rust_decimal::Decimal;
 use std::collections::{BTreeMap, VecDeque};
 
-#[derive(Debug, Clone, Copy)]
-pub enum Side {
-    Bid,
-    Ask
-}
-#[derive(Debug, Clone)]
-pub struct Order {
-    pub id : u64,
-    pub amount : Decimal,
-    pub price : Decimal,
-    pub side : Side
-}
+use crate::trade::model::{Order, Side};
 
 pub struct Orderbook {
     // Bids : Sorted descending (Highest price first)

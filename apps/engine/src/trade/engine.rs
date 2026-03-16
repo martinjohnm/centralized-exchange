@@ -1,7 +1,8 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
-use crate::trade::orderbook::{Order, Orderbook, Side};
+use crate::trade::{model::{Order, Side}, orderbook::Orderbook};
+
 
 
 pub struct Trade {
