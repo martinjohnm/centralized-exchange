@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use std::collections::{BTreeMap, VecDeque};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Side {
     Bid,
     Ask
