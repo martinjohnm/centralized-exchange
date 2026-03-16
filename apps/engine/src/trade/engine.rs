@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
-use crate::trade::orderbook::{self, Order, Orderbook, Side};
+use crate::trade::orderbook::{Order, Orderbook, Side};
 
 
 pub struct Trade {
@@ -104,4 +104,32 @@ impl MatchingEngine {
         }
     }
 
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_buy_order_exact_matching_quantity_and_price() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1, amount: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2, amount: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3, amount: dec!(1), price: dec!(103), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4, amount: dec!(1), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5, amount: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6, amount: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an buy order with amount 1 and price : 101 (exact match for the best ask)
+        engine.process_order(Order { id:7, amount: dec!(1), price: dec!(101), side: Side::Bid });
+
+        assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)));
+        let asks_at_102 = engine.orderbook.get_level_mut(dec!(102), Side::Ask).unwrap();
+        assert_eq!(asks_at_102[0].id, 2)
+
+    }
 }
