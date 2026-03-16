@@ -13,9 +13,17 @@ pub struct Trade {
 
 pub struct MatchingEngine {
     pub orderbook : Orderbook,
+    current_order_id : u64
 }
 
 impl MatchingEngine {
+
+    pub fn new() -> Self {
+        Self { 
+            orderbook: Orderbook::new(), 
+            current_order_id: 1 // Start at 1
+        }
+    }
 
     /// Processes an incoming order against the existing order book.
     /// 
