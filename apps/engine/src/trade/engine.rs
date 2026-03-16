@@ -98,12 +98,20 @@ impl MatchingEngine {
 
                 }
                 _ => {
-                    // No match possible: Add whats left to the book
-                    self.orderbook.add_order(taker_order);
+                    // -------- IMPORTANT Loop BREAKING LOGIC ---------
+                    // No match possible: (NEver add taker order here because what if the taker
+                    // amount is 0 it should create a zero volume order!!).
+                    // Loop will break with the taker_order with amount (which may or may not be 0)
                     break;
                 }
             }
 
+        }
+
+        // 2. After the loop , check if anything left to store.
+        if taker_order.amount > dec!(0) {
+            // Taker is partially filled. Adding remaining to the orderbook.
+            self.orderbook.add_order(taker_order);
         }
         trades
     }
