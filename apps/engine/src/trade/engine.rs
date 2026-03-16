@@ -25,6 +25,12 @@ impl MatchingEngine {
         }
     }
 
+    fn next_id(&mut self) -> u64 {
+        let id = self.current_order_id;
+        self.current_order_id += 1;
+        id
+    }
+
     /// Processes an incoming order against the existing order book.
     /// 
     /// #Data Flow: 
