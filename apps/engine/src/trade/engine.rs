@@ -60,7 +60,7 @@ impl MatchingEngine {
                         Side::Ask => Side::Bid
                     };
 
-                    // scoped borrow for maker_order in the Btreemap (&mut VecDeque<Order>)
+                    // --- Matching scope (scoped borrow for maker_order in the Btreemap (&mut VecDeque<Order>)) ---
                     {
                         if let Some(orders_at_level) = self.orderbook.get_level_mut(price, side_to_match) {
                             while taker_order.amount > dec!(0) && !orders_at_level.is_empty() {
@@ -81,6 +81,16 @@ impl MatchingEngine {
                                     orders_at_level.push_front(maker_order);
                                 }
                             }
+                        }
+                    } // ---- Borrow level ends here -----
+
+                    // ---- Check for the level if it is empty -----
+                    // If it is empty , We must delete the key from the BtreeMap
+
+                    if let Some(level) = self.orderbook.get_level_mut(price, side_to_match) {
+                        if level.is_empty() {
+                            // Remove the level from the book
+                            self.orderbook.remove_level(price, side_to_match);
                         }
                     }
                    
@@ -129,7 +139,10 @@ mod tests {
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)));
         let asks_at_102 = engine.orderbook.get_level_mut(dec!(102), Side::Ask).unwrap();
-        assert_eq!(asks_at_102[0].id, 2)
+        assert_eq!(asks_at_102[0].id, 2);
+
+        println!("{:#?}", engine.orderbook.asks);
+        println!("{:#?}", engine.orderbook.bids);
 
     }
 }
