@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
-use crate::trade::orderbook::{Order, Orderbook, Side};
+use crate::trade::orderbook::{self, Order, Orderbook, Side};
 
 
 pub struct Trade {
@@ -16,10 +16,21 @@ pub struct MatchingEngine {
 }
 
 impl MatchingEngine {
-    pub fn process_order(&mut self, taker_order: Order) -> Vec<Trade> {
+
+    /// Processes an incoming order against the existing order book.
+    /// 
+    /// #Data Flow: 
+    /// 1. **Peek**: Check `best price` opposite side.
+    /// 2. **Match**: If price cross, enter the matching loop.
+    /// 3. **Fill**: Substract volume from Taker and Maker.
+    /// 4. **Cleanup**: Remove price levels if they hit zero volume.
+    /// 5. **Rest**: Add remaining Taker volume to the book as the Limit order.
+
+    pub fn process_order(&mut self, mut taker_order: Order) -> Vec<Trade> {
         let mut trades = Vec::new();
 
-        while taker_order.price > dec!(0) {
+        // loop on the amount while it is non zero
+        while taker_order.amount > dec!(0) {
             // 1. Look for the best price on the oposite side
             let best_price = match taker_order.side {
                 Side::Bid => self.orderbook.best_ask(),
@@ -30,6 +41,25 @@ impl MatchingEngine {
             match best_price {
                 Some(price) if self.is_match(taker_order.price, price, taker_order.side) => {
                     // 3. Match logic here
+                    let side_to_match = match taker_order.side {
+                        Side::Bid => Side::Ask,
+                        Side::Ask => Side::Bid
+                    };
+
+                    // scoped borrow for maker_order in the Btreemap (&mut VecDeque<Order>)
+                    {
+                        if let Some(orders_at_level) = self.orderbook.get_level_mut(price, side_to_match) {
+                            while taker_order.amount > dec!(0) && !orders_at_level.is_empty() {
+                                let mut maker_order = orders_at_level.pop_front().unwrap();
+
+                                // The math how much can we actually trade? 
+                                let match_amount = taker_order.amount.min(maker_order.amount);
+
+                                taker_order.amount -= match_amount;
+                                maker_order.amount -= match_amount;
+                            }
+                        }
+                    }
                     // We will pull the level, fill orders, add call remove_level
 
                 }
