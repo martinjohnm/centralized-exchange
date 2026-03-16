@@ -86,8 +86,30 @@ mod tests {
 
     #[test]
     fn test_empty_book_behavior() {
-        let mut book = Orderbook::new();
+        let book = Orderbook::new();
         assert_eq!(book.best_bid(), None);
         assert_eq!(book.best_ask(), None);
+    }
+
+    #[test]
+    fn test_price_time_priority() {
+        let mut book = Orderbook::new();
+
+        // Add first bid at 100
+        book.add_order(Order { id: 1, amount: dec!(1), price: dec!(100), side: Side::Bid });
+
+        // Add second bid at 100
+        book.add_order(Order { id: 2, amount: dec!(1), price: dec!(100), side: Side::Bid });
+        
+        // Add third bid at 101
+        book.add_order(Order { id: 3, amount: dec!(1), price: dec!(101), side: Side::Bid });
+
+        // Best bid must be 101
+        assert_eq!(book.best_bid(), Some(dec!(101)));
+
+        // Now check the internal structure for the 100 price
+        let bids_at_100 = book.bids.get(&dec!(100)).unwrap();
+        assert_eq!(bids_at_100[0].id, 1);
+        assert_eq!(bids_at_100[1].id, 2);
     }
 }
