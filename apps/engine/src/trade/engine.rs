@@ -222,5 +222,23 @@ mod tests {
         assert_eq!(bids_at_102[0].amount, dec!(1));
         assert_eq!(bids_at_102[0].id, 3);
     }
+
+
+
+    #[test]
+    fn test_whale_activity_of_eating_entire_asks () {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1, amount: dec!(4), price: dec!(100), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2, amount: dec!(5), price: dec!(101), side: Side::Ask });
+        
+        engine.process_order(Order { id:3, amount: dec!(10), price: dec!(110), side: Side::Bid });
+
+        assert_eq!(engine.orderbook.best_bid(), Some(dec!(110)));
+        let bids_at_110 =  engine.orderbook.get_level_mut(dec!(110), Side::Bid).unwrap();
+        assert_eq!(bids_at_110[0].amount, dec!(1));
+        assert_eq!(bids_at_110[0].id, 3);
+    }
     
 }
