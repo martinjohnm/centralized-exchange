@@ -64,6 +64,7 @@ impl MatchingEngine {
                     {
                         if let Some(orders_at_level) = self.orderbook.get_level_mut(price, side_to_match) {
                             while taker_order.amount > dec!(0) && !orders_at_level.is_empty() {
+                                // mut borrow of the order from the front (most recent)
                                 let mut maker_order = orders_at_level.pop_front().unwrap();
 
                                 // The math how much can we actually trade? 
@@ -71,10 +72,18 @@ impl MatchingEngine {
 
                                 taker_order.amount -= match_amount;
                                 maker_order.amount -= match_amount;
+                                
+                                // if the maker partially filled we should put the order where it was
+                                if maker_order.amount > dec!(0) {
+                                    // Maker was only partially filled, put them back at the FRONT
+                                    // Before mut borrow took the order from Vecdeque 
+                                    // (we should put it back to the front itself)
+                                    orders_at_level.push_front(maker_order);
+                                }
                             }
                         }
                     }
-                    // We will pull the level, fill orders, add call remove_level
+                   
 
                 }
                 _ => {
