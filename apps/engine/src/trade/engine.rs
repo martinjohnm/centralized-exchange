@@ -121,7 +121,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_buy_order_exact_matching_quantity_and_price() {
+    fn test_buy_order_full_fills_and_single_level() {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
@@ -145,4 +145,73 @@ mod tests {
         println!("{:#?}", engine.orderbook.bids);
 
     }
+
+    #[test]
+    fn test_buy_order_single_level_low_price_fill_complete() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1, amount: dec!(3), price: dec!(100), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2, amount: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3, amount: dec!(2), price: dec!(102), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4, amount: dec!(1), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5, amount: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6, amount: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an buy order with amount 4 and price : 101 (3 order match from the 100 and 1 from the 101)
+        engine.process_order(Order { id:7, amount: dec!(3), price: dec!(102), side: Side::Bid });
+
+        assert_eq!(engine.orderbook.best_ask(), Some(dec!(101)));
+
+        let bids_at_101 =  engine.orderbook.get_level_mut(dec!(101), Side::Ask).unwrap();
+        assert_eq!(bids_at_101[0].amount, dec!(1));
+        assert_eq!(bids_at_101[0].id, 2);
+    }
+
+    #[test]
+    fn test_buy_order_multiple_level_full_fills() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1, amount: dec!(3), price: dec!(100), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2, amount: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3, amount: dec!(2), price: dec!(102), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4, amount: dec!(1), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5, amount: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6, amount: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an buy order with amount 4 and price : 101 (3 order match from the 100 and 1 from the 101)
+        engine.process_order(Order { id:7, amount: dec!(4), price: dec!(101), side: Side::Bid });
+
+        assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)))
+    }
+
+    #[test]
+    fn test_buy_order_multiple_level_partial_fills() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1, amount: dec!(3), price: dec!(100), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2, amount: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3, amount: dec!(2), price: dec!(102), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4, amount: dec!(1), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5, amount: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6, amount: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an buy order with amount 4 and price : 101 (3 order match from the 100 and 1 from the 101)
+        engine.process_order(Order { id:7, amount: dec!(5), price: dec!(102), side: Side::Bid });
+
+        assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)));
+
+        let bids_at_102 =  engine.orderbook.get_level_mut(dec!(102), Side::Ask).unwrap();
+        assert_eq!(bids_at_102[0].amount, dec!(1));
+        assert_eq!(bids_at_102[0].id, 3);
+    }
+    
 }
