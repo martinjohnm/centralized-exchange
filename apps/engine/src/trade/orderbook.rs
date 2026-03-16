@@ -53,6 +53,19 @@ impl Orderbook {
     pub fn best_ask(&self) -> Option<Decimal> {
         self.asks.keys().next().cloned()
     }
+
+    // get all the vecdeque array of orders of a price level 
+    // which is Optin<&mut VecDeque(Order)> the ref & engine to modify list of orders(matching them) without taking 
+    // the ownership of the entire orderbook
+
+    // Since you are returning a mutable reference, remember: While the Engine is holding that &mut VecDeque, the OrderBook is "locked."
+    // We cannot call self.orderbook.best_ask() while we are still holding the mutable reference from get_level_mut.
+    pub fn get_level_mut(&mut self , price: Decimal, side: Side) -> Option<&mut VecDeque<Order>> {
+        match side {
+            Side::Bid => self.bids.get_mut(&price),
+            Side::Ask => self.asks.get_mut(&price)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -141,6 +154,39 @@ mod tests {
             println!("{:#?}", asks); 
             println!("---------------------------");
         }
+
+    }
+
+    #[test]
+    fn test_get_level_orders () {
+        let mut book = Orderbook::new();
+
+        // Add first bid at 100
+        book.add_order(Order { id: 1, amount: dec!(1), price: dec!(100), side: Side::Bid });
+
+        // Add second bid at 100
+        book.add_order(Order { id: 2, amount: dec!(1), price: dec!(100), side: Side::Bid });
+        
+        // Add third bid at 101
+        book.add_order(Order { id: 3, amount: dec!(1), price: dec!(101), side: Side::Bid });
+
+        // Add first ask
+        book.add_order(Order { id: 4, amount: dec!(1), price: dec!(110), side: Side::Ask });
+
+        // Add second ask
+        book.add_order(Order { id: 5, amount: dec!(1), price: dec!(108), side: Side::Ask });
+
+        // Add third ask
+        book.add_order(Order { id: 6, amount: dec!(1), price: dec!(110), side: Side::Ask });
+
+
+        let bids_at_100 = book.get_level_mut(dec!(100), Side::Bid).unwrap();
+        assert_eq!(bids_at_100[0].id, 1);
+        assert_eq!(bids_at_100[1].id, 2);
+
+        let asks_at_100 = book.get_level_mut(dec!(110), Side::Ask).unwrap();
+        assert_eq!(asks_at_100[0].id, 4);
+        assert_eq!(asks_at_100[1].id, 6);
 
     }
 }
