@@ -16,7 +16,7 @@ pub struct MatchingEngine {
 }
 
 impl MatchingEngine {
-    pub fn process_order(&mut self, taker_order: Order) -> Vec<> {
+    pub fn process_order(&mut self, taker_order: Order) -> Vec<Trade> {
         let mut trades = Vec::new();
 
         while taker_order.price > dec!(0) {
