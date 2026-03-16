@@ -111,5 +111,36 @@ mod tests {
         let bids_at_100 = book.bids.get(&dec!(100)).unwrap();
         assert_eq!(bids_at_100[0].id, 1);
         assert_eq!(bids_at_100[1].id, 2);
+
+        if let Some(bids) = book.bids.get(&dec!(100)) {
+            println!("--- Current Bids at $100 ---");
+            println!("{:#?}", bids); 
+            println!("---------------------------");
+        }
+
+
+        // Add first ask
+        book.add_order(Order { id: 4, amount: dec!(1), price: dec!(110), side: Side::Ask });
+
+        // Add second ask
+        book.add_order(Order { id: 5, amount: dec!(1), price: dec!(108), side: Side::Ask });
+
+        // Add third ask
+        book.add_order(Order { id: 6, amount: dec!(1), price: dec!(110), side: Side::Ask });
+
+        assert_eq!(book.best_ask(), Some(dec!(108)));
+
+        let asks_at_110 = book.asks.get(&dec!(110)).unwrap();
+        // check the internal structure of the 110 price asks
+
+        assert_eq!(asks_at_110[0].id, 4);
+        assert_eq!(asks_at_110[1].id, 6);
+
+        if let Some(asks) = book.asks.get(&dec!(110)) {
+            println!("--- Current Asks at $110 ---");
+            println!("{:#?}", asks); 
+            println!("---------------------------");
+        }
+
     }
 }
