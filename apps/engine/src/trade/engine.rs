@@ -79,11 +79,25 @@ impl MatchingEngine {
                                 // mut borrow of the order from the front (most recent)
                                 let mut maker_order = orders_at_level.pop_front().unwrap();
 
+
+                                // ---- SELF TRADE PREVENTION (CANCEL MAKER) -------
+                                if taker_order.is_self_trade(&maker_order) {
+                                    // If taker_order and maker_order users are same it will 
+                                    // create a fake trade with itself creating fake volume and 
+                                    // unexpected fee paying here we are cancelling the maker_order
+
+                                    // By NOT pushing maker_order back and NOT matching, 
+                                    // the maker order is effectively cancelled/dropped.
+                                    continue;
+                                }
+                                
+                                // ---- PROCEED FROM HERE IF NOT A SELF TRADE------
                                 // The math how much can we actually trade? 
                                 let match_quantity = taker_order.quantity.min(maker_order.quantity);
 
                                 taker_order.quantity -= match_quantity;
                                 maker_order.quantity -= match_quantity;
+                                
                                 
                                 // if the maker partially filled we should put the order where it was
                                 if maker_order.quantity > dec!(0) {

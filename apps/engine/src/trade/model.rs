@@ -17,6 +17,12 @@ pub struct Order {
     pub side : Side
 }
 
+impl Order {
+    pub fn is_self_trade(&self, other: &Order) -> bool {
+        self.user_id == other.user_id
+    }
+}
+
 
 pub struct Trade {
     pub maker_id : u64, 
