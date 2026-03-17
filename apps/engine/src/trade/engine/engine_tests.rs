@@ -273,4 +273,122 @@ mod tests {
         let asks_at_96 = engine.orderbook.get_level_mut(dec!(96), Side::Ask).unwrap();
         assert_eq!(asks_at_96[0].quantity, dec!(60));
     }
+
+    #[test]
+    fn test_self_trade_buy_cancel_maker_same_user_id() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4,user_id: 2, quantity: dec!(4), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 2, quantity: dec!(5), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an sell order with quantity 7 and price : 96 (partial match for the best bid)
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(70), price: dec!(96), side: Side::Ask });
+
+        assert_eq!(engine.orderbook.best_ask(), Some(dec!(96)));
+        let asks_at_96 = engine.orderbook.get_level_mut(dec!(96), Side::Ask).unwrap();
+        assert_eq!(asks_at_96[0].quantity, dec!(60));
+    }
+
+    #[test]
+    fn test_self_trade_buy_cancel_maker_same_different_id() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4,user_id: 2, quantity: dec!(4), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 2, quantity: dec!(5), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an buy order with quantity 1 and price : 101 
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Bid });
+
+        assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)));
+        
+        let asks_at_103 = engine.orderbook.get_level_mut(dec!(103), Side::Ask).unwrap();
+        assert_eq!(asks_at_103[0].quantity, dec!(1));
+    }
+
+    #[test]
+    fn test_self_trade_buy_cancel_maker_same_different_id_2() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4,user_id: 2, quantity: dec!(4), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 2, quantity: dec!(5), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an buy order with quantity 1 and price : 102 
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Bid });
+
+        assert_eq!(engine.orderbook.best_ask(), Some(dec!(103)));
+        
+        let asks_at_103 = engine.orderbook.get_level_mut(dec!(103), Side::Ask).unwrap();
+        assert_eq!(asks_at_103[0].quantity, dec!(1));
+    }
+
+    #[test]
+    fn test_self_trade_buy_cancel_maker_same_different_id_3_whale_buy() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4,user_id: 2, quantity: dec!(4), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 2, quantity: dec!(5), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an buy order with quantity 1 and price : 102 
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(30), price: dec!(110), side: Side::Bid });
+
+        assert!(engine.orderbook.best_ask().is_none(), "Whale at all the asks now sits at buy side");
+        
+        let asks_at_110: &mut std::collections::VecDeque<Order> = engine.orderbook.get_level_mut(dec!(110), Side::Bid).unwrap();
+        assert_eq!(asks_at_110[0].quantity, dec!(29));
+    }
+
+
+    #[test]
+    fn test_self_trade_sell_cancel_maker_same_user_id() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4,user_id: 2, quantity: dec!(4), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 2, quantity: dec!(5), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an sell order with quantity 7 and price : 96 (partial match for the best bid)
+        engine.process_order(Order { id:7,user_id: 2, quantity: dec!(70), price: dec!(99), side: Side::Ask });
+
+        assert_eq!(engine.orderbook.best_ask(), Some(dec!(99)));
+        assert_eq!(engine.orderbook.best_bid(), Some(dec!(98)));
+        let bids_at_98 = engine.orderbook.get_level_mut(dec!(98), Side::Bid).unwrap();
+        assert_eq!(bids_at_98[0].quantity, dec!(5));
+
+        let asks_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Ask).unwrap();
+        assert_eq!(asks_at_99[0].quantity, dec!(70));
+    }
 }
