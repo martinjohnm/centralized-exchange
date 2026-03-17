@@ -75,17 +75,17 @@ mod tests {
         let mut book = Orderbook::new();
 
         // Add bids out of order
-        book.add_order(Order { id: 1, amount: dec!(1), price: dec!(100), side: Side::Bid });
-        book.add_order(Order { id: 2, amount: dec!(1), price: dec!(150), side: Side::Bid });
-        book.add_order(Order { id: 3, amount: dec!(1), price: dec!(120), side: Side::Bid });
+        book.add_order(Order { id: 1, quantity: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 2, quantity: dec!(1), price: dec!(150), side: Side::Bid });
+        book.add_order(Order { id: 3, quantity: dec!(1), price: dec!(120), side: Side::Bid });
         
         // Best bid should be highest (150)
         assert_eq!(book.best_bid(), Some(dec!(150)));
 
         // Add asks out of order 
-        book.add_order(Order { id: 1, amount: dec!(1), price: dec!(300), side: Side::Ask });
-        book.add_order(Order { id: 2, amount: dec!(1), price: dec!(290), side: Side::Ask });
-        book.add_order(Order { id: 3, amount: dec!(1), price: dec!(450), side: Side::Ask });
+        book.add_order(Order { id: 1, quantity: dec!(1), price: dec!(300), side: Side::Ask });
+        book.add_order(Order { id: 2, quantity: dec!(1), price: dec!(290), side: Side::Ask });
+        book.add_order(Order { id: 3, quantity: dec!(1), price: dec!(450), side: Side::Ask });
 
         // Best ask should be the Lowest (290)
         assert_eq!(book.best_ask(), Some(dec!(290)));
@@ -105,13 +105,13 @@ mod tests {
         let mut book = Orderbook::new();
 
         // Add first bid at 100
-        book.add_order(Order { id: 1, amount: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 1, quantity: dec!(1), price: dec!(100), side: Side::Bid });
 
         // Add second bid at 100
-        book.add_order(Order { id: 2, amount: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
         
         // Add third bid at 101
-        book.add_order(Order { id: 3, amount: dec!(1), price: dec!(101), side: Side::Bid });
+        book.add_order(Order { id: 3, quantity: dec!(1), price: dec!(101), side: Side::Bid });
 
         // Best bid must be 101
         assert_eq!(book.best_bid(), Some(dec!(101)));
@@ -129,13 +129,13 @@ mod tests {
 
 
         // Add first ask
-        book.add_order(Order { id: 4, amount: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 4, quantity: dec!(1), price: dec!(110), side: Side::Ask });
 
         // Add second ask
-        book.add_order(Order { id: 5, amount: dec!(1), price: dec!(108), side: Side::Ask });
+        book.add_order(Order { id: 5, quantity: dec!(1), price: dec!(108), side: Side::Ask });
 
         // Add third ask
-        book.add_order(Order { id: 6, amount: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 6, quantity: dec!(1), price: dec!(110), side: Side::Ask });
 
         assert_eq!(book.best_ask(), Some(dec!(108)));
 
@@ -158,22 +158,22 @@ mod tests {
         let mut book = Orderbook::new();
 
         // Add first bid at 100
-        book.add_order(Order { id: 1, amount: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 1, quantity: dec!(1), price: dec!(100), side: Side::Bid });
 
         // Add second bid at 100
-        book.add_order(Order { id: 2, amount: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
         
         // Add third bid at 101
-        book.add_order(Order { id: 3, amount: dec!(1), price: dec!(101), side: Side::Bid });
+        book.add_order(Order { id: 3, quantity: dec!(1), price: dec!(101), side: Side::Bid });
 
         // Add first ask
-        book.add_order(Order { id: 4, amount: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 4, quantity: dec!(1), price: dec!(110), side: Side::Ask });
 
         // Add second ask
-        book.add_order(Order { id: 5, amount: dec!(1), price: dec!(108), side: Side::Ask });
+        book.add_order(Order { id: 5, quantity: dec!(1), price: dec!(108), side: Side::Ask });
 
         // Add third ask
-        book.add_order(Order { id: 6, amount: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 6, quantity: dec!(1), price: dec!(110), side: Side::Ask });
 
 
         let bids_at_100 = book.get_level_mut(dec!(100), Side::Bid).unwrap();
@@ -191,22 +191,22 @@ mod tests {
         let mut book = Orderbook::new();
 
         // Add first bid at 100
-        book.add_order(Order { id: 1, amount: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 1, quantity: dec!(1), price: dec!(100), side: Side::Bid });
 
         // Add second bid at 100
-        book.add_order(Order { id: 2, amount: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
         
         // Add third bid at 101
-        book.add_order(Order { id: 3, amount: dec!(1), price: dec!(101), side: Side::Bid });
+        book.add_order(Order { id: 3, quantity: dec!(1), price: dec!(101), side: Side::Bid });
 
         // Add first ask
-        book.add_order(Order { id: 4, amount: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 4, quantity: dec!(1), price: dec!(110), side: Side::Ask });
 
         // Add second ask
-        book.add_order(Order { id: 5, amount: dec!(1), price: dec!(108), side: Side::Ask });
+        book.add_order(Order { id: 5, quantity: dec!(1), price: dec!(108), side: Side::Ask });
 
         // Add third ask
-        book.add_order(Order { id: 6, amount: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 6, quantity: dec!(1), price: dec!(110), side: Side::Ask });
 
 
         book.remove_level(dec!(100), Side::Bid);

@@ -11,7 +11,7 @@ pub enum Side {
 #[derive(Debug, Clone)]
 pub struct Order {
     pub id : u64,
-    pub amount : Decimal,
+    pub quantity : Decimal,
     pub price : Decimal,
     pub side : Side
 }
