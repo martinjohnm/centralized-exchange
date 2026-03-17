@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
-use crate::trade::{model::{Order, Side, Trade}, orderbook::Orderbook};
+use crate::trade::{model::{Order, OrderRequest, Side, Trade}, orderbook::Orderbook};
 
 
 
@@ -26,6 +26,22 @@ impl MatchingEngine {
         id
     }
 
+    pub fn submit_order(&mut self, req: OrderRequest) {
+        // 1. Assign the order_id
+        let order_id = self.next_id();
+
+        // 2. Wrap the request into internal Order
+        let taker_order = Order {
+            id: order_id,
+            user_id: req.user_id,
+            price: req.price,
+            quantity: req.quantity,
+            side: req.side
+        };
+
+        self.process_order(taker_order);
+    }
+
     /// Processes an incoming order against the existing order book.
     /// 
     /// #Data Flow: 
@@ -35,7 +51,8 @@ impl MatchingEngine {
     /// 4. **Cleanup**: Remove price levels if they hit zero volume.
     /// 5. **Rest**: Add remaining Taker volume to the book as the Limit order.
 
-    pub fn process_order(&mut self, mut taker_order: Order) -> Vec<Trade> {
+    // ---------------- PRIVATE: THe "Hot path" matching logic ----------------
+    fn process_order(&mut self, mut taker_order: Order) -> Vec<Trade> {
         let mut trades = Vec::new();
 
         // loop on the quantity while it is non zero
@@ -128,17 +145,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(1), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(1), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(1), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an buy order with quantity 1 and price : 101 (exact match for the best ask)
-        engine.process_order(Order { id:7, quantity: dec!(1), price: dec!(101), side: Side::Bid });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Bid });
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)));
         let asks_at_102 = engine.orderbook.get_level_mut(dec!(102), Side::Ask).unwrap();
@@ -154,17 +171,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(3), price: dec!(100), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(2), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(3), price: dec!(100), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(2), price: dec!(102), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(1), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(1), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(1), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an buy order with quantity 4 and price : 101 (3 order match from the 100 and 1 from the 101)
-        engine.process_order(Order { id:7, quantity: dec!(3), price: dec!(102), side: Side::Bid });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(3), price: dec!(102), side: Side::Bid });
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(101)));
 
@@ -178,17 +195,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(3), price: dec!(100), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(2), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(3), price: dec!(100), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(2), price: dec!(102), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(1), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(1), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(1), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an buy order with quantity 4 and price : 101 (3 order match from the 100 and 1 from the 101)
-        engine.process_order(Order { id:7, quantity: dec!(4), price: dec!(101), side: Side::Bid });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(4), price: dec!(101), side: Side::Bid });
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)))
     }
@@ -198,17 +215,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(3), price: dec!(100), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(2), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(3), price: dec!(100), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(2), price: dec!(102), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(1), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(1), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(1), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an buy order with quantity 4 and price : 101 (3 order match from the 100 and 1 from the 101)
-        engine.process_order(Order { id:7, quantity: dec!(5), price: dec!(102), side: Side::Bid });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(5), price: dec!(102), side: Side::Bid });
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)));
 
@@ -224,10 +241,10 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(4), price: dec!(100), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(5), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(4), price: dec!(100), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(5), price: dec!(101), side: Side::Ask });
         
-        engine.process_order(Order { id:3, quantity: dec!(10), price: dec!(110), side: Side::Bid });
+        engine.process_order(Order { id:3,user_id: 1, quantity: dec!(10), price: dec!(110), side: Side::Bid });
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(110)));
         let bids_at_110 =  engine.orderbook.get_level_mut(dec!(110), Side::Bid).unwrap();
@@ -240,17 +257,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(1), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(1), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(1), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an sell order with quantity 1 and price : 99 (exact match for the best abidsk)
-        engine.process_order(Order { id:7, quantity: dec!(1), price: dec!(99), side: Side::Ask });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(1), price: dec!(99), side: Side::Ask });
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(98)));
         let bids_at_98 = engine.orderbook.get_level_mut(dec!(98), Side::Bid).unwrap();
@@ -262,17 +279,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(2), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(1), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(2), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an sell order with quantity 1 and price : 99 (exact match for the best bid)
-        engine.process_order(Order { id:7, quantity: dec!(1), price: dec!(99), side: Side::Ask });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(1), price: dec!(99), side: Side::Ask });
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(99)));
         let bids_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Bid).unwrap();
@@ -285,17 +302,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(6), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(1), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(6), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an sell order with quantity 6 and price : 97 (exact match for the best bid)
-        engine.process_order(Order { id:7, quantity: dec!(6), price: dec!(97), side: Side::Ask });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(6), price: dec!(97), side: Side::Ask });
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(98)));
         let bids_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Bid);
@@ -307,17 +324,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(6), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(1), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(6), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(1), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an sell order with quantity 4 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7, quantity: dec!(4), price: dec!(96), side: Side::Ask });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(4), price: dec!(96), side: Side::Ask });
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(99)));
         let bids_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Bid).unwrap();
@@ -329,17 +346,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(4), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(5), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(4), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(5), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an sell order with quantity 7 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7, quantity: dec!(7), price: dec!(96), side: Side::Ask });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(7), price: dec!(96), side: Side::Ask });
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(98)));
         let bids_at_98 = engine.orderbook.get_level_mut(dec!(98), Side::Bid).unwrap();
@@ -351,17 +368,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(4), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(5), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(4), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(5), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an sell order with quantity 9 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7, quantity: dec!(9), price: dec!(96), side: Side::Ask });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(9), price: dec!(96), side: Side::Ask });
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(97)));
         let bids_at_97 = engine.orderbook.get_level_mut(dec!(97), Side::Bid).unwrap();
@@ -373,17 +390,17 @@ mod tests {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
-        engine.orderbook.add_order(Order { id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
 
         // Add bids
-        engine.orderbook.add_order(Order { id: 4, quantity: dec!(4), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5, quantity: dec!(5), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 4,user_id: 1, quantity: dec!(4), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5,user_id: 1, quantity: dec!(5), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6,user_id: 1, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
         // sent an sell order with quantity 7 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7, quantity: dec!(70), price: dec!(96), side: Side::Ask });
+        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(70), price: dec!(96), side: Side::Ask });
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(96)));
         let asks_at_96 = engine.orderbook.get_level_mut(dec!(96), Side::Ask).unwrap();
