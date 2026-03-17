@@ -309,7 +309,7 @@ mod tests {
     }
     
     #[test]
-    fn test_single_level_full_fill_low_price_sell_order() {
+    fn test_single_level_partial_fill_low_price_sell_order() {
         let mut engine = MatchingEngine::new();
 
         // Add bids 
@@ -326,7 +326,7 @@ mod tests {
         engine.process_order(Order { id:7, quantity: dec!(4), price: dec!(96), side: Side::Ask });
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(99)));
-        let bids_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Bid);
-        assert!(bids_at_99.is_none(), "Price level $99 should have been deleted from the BTreeMap");
+        let bids_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Bid).unwrap();
+        assert_eq!(bids_at_99[0].quantity, dec!(2));
     }
 }
