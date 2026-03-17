@@ -15,3 +15,11 @@ pub struct Order {
     pub price : Decimal,
     pub side : Side
 }
+
+
+pub struct Trade {
+    pub maker_id : u64, 
+    pub taker_id : u64,
+    pub price : Decimal,
+    pub quantity : Decimal
+}

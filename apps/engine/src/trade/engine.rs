@@ -1,16 +1,10 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
-use crate::trade::{model::{Order, Side}, orderbook::Orderbook};
+use crate::trade::{model::{Order, Side, Trade}, orderbook::Orderbook};
 
 
 
-pub struct Trade {
-    pub maker_id : u64, 
-    pub taker_id : u64,
-    pub price : Decimal,
-    pub quantity : Decimal
-}
 
 pub struct MatchingEngine {
     pub orderbook : Orderbook,
