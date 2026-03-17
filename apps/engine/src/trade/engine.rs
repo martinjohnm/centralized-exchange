@@ -329,4 +329,26 @@ mod tests {
         let bids_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Bid).unwrap();
         assert_eq!(bids_at_99[0].quantity, dec!(2));
     }
+
+    #[test]
+    fn test_multi_level_partial_fill_low_price_sell_order() {
+        let mut engine = MatchingEngine::new();
+
+        // Add bids 
+        engine.orderbook.add_order(Order { id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 2, quantity: dec!(1), price: dec!(102), side: Side::Ask });
+        engine.orderbook.add_order(Order { id: 3, quantity: dec!(1), price: dec!(103), side: Side::Ask });
+
+        // Add bids
+        engine.orderbook.add_order(Order { id: 4, quantity: dec!(4), price: dec!(99), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 5, quantity: dec!(5), price: dec!(98), side: Side::Bid });
+        engine.orderbook.add_order(Order { id: 6, quantity: dec!(1), price: dec!(97), side: Side::Bid });
+
+        // sent an sell order with quantity 7 and price : 96 (partial match for the best bid)
+        engine.process_order(Order { id:7, quantity: dec!(7), price: dec!(96), side: Side::Ask });
+
+        assert_eq!(engine.orderbook.best_bid(), Some(dec!(98)));
+        let bids_at_98 = engine.orderbook.get_level_mut(dec!(98), Side::Bid).unwrap();
+        assert_eq!(bids_at_98[0].quantity, dec!(2));
+    }
 }
