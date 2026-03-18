@@ -8,15 +8,17 @@ use crate::trade::{model::{Order, OrderRequest, Side, Trade}, orderbook::Orderbo
 
 pub struct MatchingEngine {
     pub orderbook : Orderbook,
-    current_order_id : u64
+    current_order_id : u64,
+    pub asset_pair: String
 }
 
 impl MatchingEngine {
 
-    pub fn new() -> Self {
+    pub fn new(asset_pair: String) -> Self {
         Self { 
             orderbook: Orderbook::new(), 
-            current_order_id: 1 // Start at 1
+            current_order_id: 1, // Start at 1,
+            asset_pair : asset_pair.to_uppercase()
         }
     }
 
