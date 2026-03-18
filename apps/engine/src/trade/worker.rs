@@ -1,0 +1,63 @@
+use std::sync::{Arc, Mutex};
+
+use redis::Commands;
+
+use crate::trade::{bank::Bank, engine::MatchingEngine, model::{Order, OrderRequest}};
+
+
+
+
+pub struct MarketWorker {
+    bank : Arc<Mutex<Bank>>,
+    redis_client: redis::Client,
+    pair : String
+}
+
+impl MarketWorker {
+    pub fn new(bank : Arc<Mutex<Bank>>, redis_url: &str, pair: &str) -> Self {
+        Self { 
+            bank,
+            redis_client: redis::Client::open(redis_url).unwrap(),
+            pair: pair.to_string()
+        }
+    }
+
+    pub fn spawn(self) {
+        let pair = self.pair.clone();
+        let bank = self.bank;
+        let client = self.redis_client;
+
+        std::thread::spawn(move || {
+            let mut con = client.get_connection().expect("Redis connection failed");
+            let mut engine = MatchingEngine::new(pair.clone());
+
+            let queu_key = format!("Orders:{}", pair);
+
+            loop {
+                // 1. BRPOP : wait for the order
+                let data : Vec<String> = con.brpop(&queu_key, 0.0).unwrap();
+                let order_json = &data[1];
+
+                let order: OrderRequest = serde_json::from_str(order_json).unwrap();
+
+
+
+                // 2. PRE-MATCH LOCK (Check and lock funds)
+                {
+                    let mut bank_guard = bank.lock().unwrap();
+                    if let Err(_) = bank_guard.lock_funds(order.user_id,"BTC/USDT", order.quantity) {
+                        continue;
+                    }
+                }
+
+                // 3. MATCH - (NO lock - Pure logic)
+                let trades = engine.submit_order(order);
+
+
+                // 4. POST MATCH LOCK (Settle balances)
+                
+
+            }
+        });
+    }
+}
