@@ -24,7 +24,7 @@ impl Order {
     }
 }
 
-
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Trade {
     pub maker_id : u64, 
     pub taker_id : u64,
