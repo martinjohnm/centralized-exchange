@@ -9,7 +9,7 @@ mod tests {
 
     #[test]
     fn test_buy_order_full_fills_and_single_level() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn test_buy_order_single_level_low_price_fill_complete() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(3), price: dec!(100), side: Side::Ask });
@@ -59,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_buy_order_multiple_level_full_fills() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(3), price: dec!(100), side: Side::Ask });
@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn test_buy_order_multiple_level_partial_fills() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(3), price: dec!(100), side: Side::Ask });
@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn test_whale_activity_of_eating_entire_asks () {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(4), price: dec!(100), side: Side::Ask });
@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn test_single_level_sell_order() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_single_level_partial_fill_sell_order() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_single_level_full_fill_low_price_sell_order() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -188,7 +188,7 @@ mod tests {
     
     #[test]
     fn test_single_level_partial_fill_low_price_sell_order() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -210,7 +210,7 @@ mod tests {
 
     #[test]
     fn test_multi_level_partial_fill_low_price_sell_order() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -232,7 +232,7 @@ mod tests {
 
     #[test]
     fn test_multi_level_full_fill_low_price_sell_order() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -254,7 +254,7 @@ mod tests {
 
     #[test]
     fn test_whale_activity_eating_entire_bids() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -276,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_self_trade_buy_cancel_maker_same_user_id() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -298,7 +298,7 @@ mod tests {
 
     #[test]
     fn test_self_trade_buy_cancel_maker_same_different_id() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -321,7 +321,7 @@ mod tests {
 
     #[test]
     fn test_self_trade_buy_cancel_maker_same_different_id_2() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -344,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_self_trade_buy_cancel_maker_same_different_id_3_whale_buy() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
@@ -368,7 +368,7 @@ mod tests {
 
     #[test]
     fn test_self_trade_sell_cancel_maker_same_user_id() {
-        let mut engine = MatchingEngine::new();
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
