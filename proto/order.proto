@@ -2,5 +2,18 @@ syntax = "proto3";
 package exchange; // This determines the Rust module name
 
 
+// Protobuf starts at 0
 
+enum Side {
+    BID = 0;
+    ASK = 1;
+}
+
+message OrderRequestProto {
+    uint64 user_id = 1;
+    string price = 2;      // Sent as "50000.50"
+    string quantity = 3;   // Sent as "0.01"
+    Side side = 4;
+    string symbol = 5;     // "BTC_USDT"
+}
 

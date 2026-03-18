@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use redis::Commands;
 
-use crate::trade::{bank::Bank, engine::MatchingEngine, model::{Order, OrderRequest}};
+use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest}};
 
 
 

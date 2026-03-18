@@ -55,7 +55,7 @@ impl MatchingEngine {
 
     // ---------------- PRIVATE: THe "Hot path" matching logic ----------------
     fn process_order(&mut self, mut taker_order: Order) -> Vec<Trade> {
-        let mut trades = Vec::new();
+        let trades = Vec::new();
 
         // loop on the quantity while it is non zero
         while taker_order.quantity > dec!(0) {

@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-
-
+use std::convert::TryFrom;
+use std::str::FromStr;
 
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -41,4 +41,33 @@ pub struct OrderRequest {
     pub quantity: Decimal, 
     pub side: Side,
     pub symbol: String,    // "BTC_USDT"
+}
+
+// 2. THE GENERATED TYPES (The "Dirty" ones from build.rs)
+pub mod exchange_proto {
+    include!(concat!(env!("OUT_DIR"), "/exchange.rs"));
+}
+
+// --- THE BRIDGE (The Conversion Logic) ---
+// This is the "TryFrom" trait. It attempts to turn the "Dirty" 
+// Protobuf struct into your "Clean" OrderRequest struct.
+
+impl TryFrom<exchange_proto::OrderRequestProto> for OrderRequest {
+    type Error = String;
+
+    fn try_from(proto: exchange_proto::OrderRequestProto) -> Result<Self, Self::Error> {
+        let side = match proto.side {
+            0 => Side::Bid,
+            1 => Side::Ask,
+            _ => return Err("Invalid Side".to_string()),
+        };
+
+        Ok(OrderRequest {
+            user_id: proto.user_id,
+            symbol: proto.symbol,
+            price: Decimal::from_str(&proto.price).map_err(|_| "Invalid price".to_string())?,
+            quantity: Decimal::from_str(&proto.quantity).map_err(|_| "Invalid qty".to_string())?,
+            side,
+        })
+    }
 }
