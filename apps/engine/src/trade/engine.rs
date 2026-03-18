@@ -28,7 +28,7 @@ impl MatchingEngine {
         id
     }
 
-    pub fn submit_order(&mut self, req: OrderRequest) {
+    pub fn submit_order(&mut self, req: OrderRequest) -> Vec<Trade> {
         // 1. Assign the order_id
         let order_id = self.next_id();
 
@@ -41,7 +41,7 @@ impl MatchingEngine {
             side: req.side
         };
 
-        self.process_order(taker_order);
+        self.process_order(taker_order)
     }
 
     /// Processes an incoming order against the existing order book.
