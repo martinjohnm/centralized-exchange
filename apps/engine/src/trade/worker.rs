@@ -56,6 +56,26 @@ impl MarketWorker {
 
                 // 4. POST MATCH LOCK (Settle balances)
                 
+                if !trades.is_empty() {
+                    // settle the trades here
+                    let mut bank_guard = bank.lock().unwrap();
+
+                    for trade in trades {
+                        bank_guard.settle_trade(
+                            trade.maker_id, 
+                            trade.taker_id, 
+                            trade.quantity, 
+                            trade.price * trade.quantity, 
+                            "BTC", 
+                            "USDT", 
+                            trade.taker_side
+                        );
+                        // Publish the trade event
+                        let _ : () = con.publish("trade_updates", serde_json::to_string(&trade).unwrap()).unwrap();
+                    }
+
+                }
+
 
             }
         });

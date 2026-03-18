@@ -29,7 +29,9 @@ pub struct Trade {
     pub maker_id : u64, 
     pub taker_id : u64,
     pub price : Decimal,
-    pub quantity : Decimal
+    pub quantity : Decimal,
+    pub taker_side : Side,
+    pub maker_side : Side
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
