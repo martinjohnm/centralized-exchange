@@ -1,8 +1,10 @@
 use std::sync::{Arc, Mutex};
 
+use prost::Message;
 use redis::Commands;
+use serde::de::value::Error;
 
-use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest}};
+use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest, exchange_proto::OrderRequestProto}};
 
 
 
@@ -32,49 +34,60 @@ impl MarketWorker {
             let mut engine = MatchingEngine::new(pair.clone());
 
             let queu_key = format!("Orders:{}", pair);
-
             loop {
                 // 1. BRPOP : wait for the order
-                let data : Vec<String> = con.brpop(&queu_key, 0.0).unwrap();
-                let order_json = &data[1];
+                let data : Vec<Vec<u8>> = con.brpop(&queu_key, 0.0).unwrap();
+                let binary_payload = &data[1];
 
-                let order: OrderRequest = serde_json::from_str(order_json).unwrap();
-
-
-
-                // 2. PRE-MATCH LOCK (Check and lock funds)
-                {
-                    let mut bank_guard = bank.lock().unwrap();
-                    if let Err(_) = bank_guard.lock_funds(order.user_id,"BTC/USDT", order.quantity) {
+                let order : OrderRequest = match OrderRequestProto::decode(&binary_payload[..]) {
+                    Ok(proto) => match OrderRequest::try_from(proto) {
+                        Ok(clean_order) => clean_order,
+                        Err(e) => {
+                            eprintln!("Validation Failed: {}", e);
+                            continue;
+                        }
+                    },
+                    Err(e) => {
+                        eprintln!("Protobuf Decode Failed: {}", e);
                         continue;
                     }
-                }
+                };
 
-                // 3. MATCH - (NO lock - Pure logic)
-                let trades = engine.submit_order(order);
+                println!("{:?}", order);
+
+                // // 2. PRE-MATCH LOCK (Check and lock funds)
+                // {
+                //     let mut bank_guard = bank.lock().unwrap();
+                //     if let Err(_) = bank_guard.lock_funds(order.user_id,"BTC/USDT", order.quantity) {
+                //         continue;
+                //     }
+                // }
+
+                // // 3. MATCH - (NO lock - Pure logic)
+                // let trades = engine.submit_order(order);
 
 
-                // 4. POST MATCH LOCK (Settle balances)
+                // // 4. POST MATCH LOCK (Settle balances)
                 
-                if !trades.is_empty() {
-                    // settle the trades here
-                    let mut bank_guard = bank.lock().unwrap();
+                // if !trades.is_empty() {
+                //     // settle the trades here
+                //     let mut bank_guard = bank.lock().unwrap();
 
-                    for trade in trades {
-                        bank_guard.settle_trade(
-                            trade.maker_id, 
-                            trade.taker_id, 
-                            trade.quantity, 
-                            trade.price * trade.quantity, 
-                            "BTC", 
-                            "USDT", 
-                            trade.taker_side
-                        );
-                        // Publish the trade event
-                        let _ : () = con.publish("trade_updates", serde_json::to_string(&trade).unwrap()).unwrap();
-                    }
+                //     for trade in trades {
+                //         bank_guard.settle_trade(
+                //             trade.maker_id, 
+                //             trade.taker_id, 
+                //             trade.quantity, 
+                //             trade.price * trade.quantity, 
+                //             "BTC", 
+                //             "USDT", 
+                //             trade.taker_side
+                //         );
+                //         // Publish the trade event
+                //         let _ : () = con.publish("trade_updates", serde_json::to_string(&trade).unwrap()).unwrap();
+                //     }
 
-                }
+                // }
 
 
             }

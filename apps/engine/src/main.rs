@@ -16,7 +16,7 @@ fn main() {
     let btc_worker = MarketWorker::new(
         Arc::clone(&shared_bank), 
         redis_url, 
-        "ETH/USDT"
+        "BTC/USDT"
     );
     btc_worker.spawn();
 
