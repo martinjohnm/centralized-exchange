@@ -1,6 +1,8 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::fs;
 use std::str::FromStr;
 
 
@@ -32,6 +34,32 @@ pub struct Trade {
     pub quantity : Decimal,
     pub taker_side : Side,
     pub maker_side : Side
+}
+#[derive(Deserialize, Debug, Clone)]
+pub struct MarketConfig {
+    pub base : String,
+    pub quote: String,
+    pub queue_prefix : String
+}
+
+// Load the central file
+pub fn load_markets() -> HashMap<String, MarketConfig> {
+    // This macro looks relative to the FILE it is written in.
+    // From src/trade/model.rs, we need to go up 4 times to hit root.
+    let data = include_str!("../../../../markets.json"); 
+    
+    serde_json::from_str(data).expect("JSON was not well-formatted")
+}
+
+
+impl MarketConfig {
+    pub fn get_redis_key(&self) -> String {
+        format!("{}:{}_{}", self.queue_prefix, self.base, self.quote)
+    }
+
+    pub fn get_symbol(&self) -> String {
+        format!("{}_{}", self.base, self.quote)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

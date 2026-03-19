@@ -4,7 +4,7 @@ use prost::Message;
 use redis::Commands;
 use serde::de::value::Error;
 
-use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest, exchange_proto::OrderRequestProto}};
+use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest, exchange_proto::OrderRequestProto, load_markets}};
 
 
 
@@ -12,15 +12,17 @@ use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest, exc
 pub struct MarketWorker {
     bank : Arc<Mutex<Bank>>,
     redis_client: redis::Client,
-    pair : String
+    pair : String,
+    queue_key: String
 }
 
 impl MarketWorker {
-    pub fn new(bank : Arc<Mutex<Bank>>, redis_url: &str, pair: &str) -> Self {
+    pub fn new(bank : Arc<Mutex<Bank>>, redis_url: &str, pair: &str, queue_key: &str) -> Self {
         Self { 
             bank,
             redis_client: redis::Client::open(redis_url).unwrap(),
-            pair: pair.to_string()
+            pair: pair.to_string(),
+            queue_key: queue_key.to_string()
         }
     }
 
@@ -32,13 +34,12 @@ impl MarketWorker {
         std::thread::spawn(move || {
             let mut con = client.get_connection().expect("Redis connection failed");
             let mut engine = MatchingEngine::new(pair.clone());
-
-            let queu_key = format!("Orders:{}", pair);
+            println!("{}", self.queue_key);
             loop {
                 // 1. BRPOP : wait for the order
-                let data : Vec<Vec<u8>> = con.brpop(&queu_key, 0.0).unwrap();
+                let data : Vec<Vec<u8>> = con.brpop(&self.queue_key, 0.0).unwrap();
                 let binary_payload = &data[1];
-
+                // println!("{:?}", data);
                 let order : OrderRequest = match OrderRequestProto::decode(&binary_payload[..]) {
                     Ok(proto) => match OrderRequest::try_from(proto) {
                         Ok(clean_order) => clean_order,
@@ -52,8 +53,7 @@ impl MarketWorker {
                         continue;
                     }
                 };
-
-                println!("{:?}", order);
+                
 
                 // // 2. PRE-MATCH LOCK (Check and lock funds)
                 // {

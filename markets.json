@@ -1,0 +1,12 @@
+{
+  "BTC_USDT": {
+    "base": "BTC",
+    "quote": "USDT",
+    "queue_prefix": "orders"
+  },
+  "ETH_USDT": {
+    "base": "ETH",
+    "quote": "USDT",
+    "queue_prefix": "orders"
+  }
+}
