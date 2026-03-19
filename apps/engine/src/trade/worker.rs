@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::{num::NonZeroUsize, sync::{Arc, Mutex}};
 
 use prost::Message;
 use redis::Commands;
@@ -35,62 +35,82 @@ impl MarketWorker {
             let mut con = client.get_connection().expect("Redis connection failed");
             let mut engine = MatchingEngine::new(pair.clone());
             println!("{}", self.queue_key);
+
             loop {
-                // 1. BRPOP : wait for the order
-                let data : Vec<Vec<u8>> = con.brpop(&self.queue_key, 0.0).unwrap();
-                let binary_payload = &data[1];
-                // println!("{:?}", data);
-                let order : OrderRequest = match OrderRequestProto::decode(&binary_payload[..]) {
-                    Ok(proto) => match OrderRequest::try_from(proto) {
-                        Ok(clean_order) => clean_order,
-                        Err(e) => {
-                            eprintln!("Validation Failed: {}", e);
-                            continue;
-                        }
-                    },
-                    Err(e) => {
-                        eprintln!("Protobuf Decode Failed: {}", e);
-                        continue;
-                    }
-                };
-                
+                // 1. BLOCK for the first item (prevents 100% CPU usage when idle)
+                // BRPOP returns [key, value]
+                let first_item: Vec<Vec<u8>> = con.brpop(&self.queue_key, 0.0).expect("Redis fail");
+                let mut batch = vec![first_item[1].clone()];
 
-                // // 2. PRE-MATCH LOCK (Check and lock funds)
-                // {
-                //     let mut bank_guard = bank.lock().unwrap();
-                //     if let Err(_) = bank_guard.lock_funds(order.user_id,"BTC/USDT", order.quantity) {
-                //         continue;
-                //     }
-                // }
+                // 2. GREEDY DRAIN: Grab up to 99 more items immediately (Non-blocking)
+                // RPOP with a count is MUCH faster than BRPOP in a loop
+                let count = NonZeroUsize::new(99);
+                let extra_items: Vec<Vec<u8>> = con.rpop(&self.queue_key, count).unwrap_or_default();
+                batch.extend(extra_items);
 
-                // // 3. MATCH - (NO lock - Pure logic)
-                // let trades = engine.submit_order(order);
-
-
-                // // 4. POST MATCH LOCK (Settle balances)
-                
-                // if !trades.is_empty() {
-                //     // settle the trades here
-                //     let mut bank_guard = bank.lock().unwrap();
-
-                //     for trade in trades {
-                //         bank_guard.settle_trade(
-                //             trade.maker_id, 
-                //             trade.taker_id, 
-                //             trade.quantity, 
-                //             trade.price * trade.quantity, 
-                //             "BTC", 
-                //             "USDT", 
-                //             trade.taker_side
-                //         );
-                //         // Publish the trade event
-                //         let _ : () = con.publish("trade_updates", serde_json::to_string(&trade).unwrap()).unwrap();
-                //     }
-
-                // }
-
-
+                // 3. PROCESS THE BATCH
+                // Now you have 100 orders in memory with only 2 Redis calls!
+                for binary_payload in batch {
+                    // Decode and Match logic goes here...
+                    // let order = OrderRequestProto::decode(&binary_payload[..]).unwrap();
+                }
             }
+            // loop {
+            //     // 1. BRPOP : wait for the order
+            //     let data : Vec<Vec<u8>> = con.brpop(&self.queue_key, 0.0).unwrap();
+            //     let binary_payload = &data[1];
+            //     // println!("{:?}", data);
+            //     // let order : OrderRequest = match OrderRequestProto::decode(&binary_payload[..]) {
+            //     //     Ok(proto) => match OrderRequest::try_from(proto) {
+            //     //         Ok(clean_order) => clean_order,
+            //     //         Err(e) => {
+            //     //             eprintln!("Validation Failed: {}", e);
+            //     //             continue;
+            //     //         }
+            //     //     },
+            //     //     Err(e) => {
+            //     //         eprintln!("Protobuf Decode Failed: {}", e);
+            //     //         continue;
+            //     //     }
+            //     // };
+            //     // println!("{:?}", order);
+
+            //     // // 2. PRE-MATCH LOCK (Check and lock funds)
+            //     // {
+            //     //     let mut bank_guard = bank.lock().unwrap();
+            //     //     if let Err(_) = bank_guard.lock_funds(order.user_id,"BTC/USDT", order.quantity) {
+            //     //         continue;
+            //     //     }
+            //     // }
+
+            //     // // 3. MATCH - (NO lock - Pure logic)
+            //     // let trades = engine.submit_order(order);
+
+
+            //     // // 4. POST MATCH LOCK (Settle balances)
+                
+            //     // if !trades.is_empty() {
+            //     //     // settle the trades here
+            //     //     let mut bank_guard = bank.lock().unwrap();
+
+            //     //     for trade in trades {
+            //     //         bank_guard.settle_trade(
+            //     //             trade.maker_id, 
+            //     //             trade.taker_id, 
+            //     //             trade.quantity, 
+            //     //             trade.price * trade.quantity, 
+            //     //             "BTC", 
+            //     //             "USDT", 
+            //     //             trade.taker_side
+            //     //         );
+            //     //         // Publish the trade event
+            //     //         let _ : () = con.publish("trade_updates", serde_json::to_string(&trade).unwrap()).unwrap();
+            //     //     }
+
+            //     // }
+
+
+            // }
         });
     }
 }

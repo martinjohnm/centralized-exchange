@@ -9,7 +9,7 @@ use engine::trade::model::exchange_proto::OrderRequestProto;
 fn main() {
     // Configuration
     let redis_url = "redis://127.0.0.1/";
-    let orders_per_second = 3000; 
+    let orders_per_second = 600; 
     let delay = Duration::from_millis(1000 / orders_per_second);
 
     println!("Spawning fire thread at {} orders/sec", orders_per_second);
@@ -28,13 +28,7 @@ fn main() {
         loop {
 
             // 1. Create the Proto message
-            let order = OrderRequestProto {
-                user_id: 1,
-                symbol: btc_config.get_symbol(),
-                price: "50000.00".to_string(),
-                quantity: "0.1".to_string(),
-                side: 0, // Buy
-            };
+            let order = create_random_order(&btc_config);
 
             // 2. Encode to binary
             let mut buf = Vec::new();
@@ -52,4 +46,26 @@ fn main() {
 
     // Keep the main thread alive
     handle.join().unwrap();
+}
+
+
+use rand::{thread_rng, Rng}; // Correct imports
+
+fn create_random_order(config: &MarketConfig) -> OrderRequestProto {
+    let mut rng = thread_rng(); // Use the imported function
+
+    let side = rng.gen_range(0..2);
+    let base_price = 50000;
+    let offset = rng.gen_range(-100..100);
+    
+    // Using format! for the prototype
+    let price_str = format!("{}.00", base_price + offset);
+
+    OrderRequestProto {
+        user_id: rng.gen_range(1..1000),
+        symbol: config.get_symbol(),
+        price: price_str,
+        quantity: "0.1".to_string(),
+        side,
+    }
 }

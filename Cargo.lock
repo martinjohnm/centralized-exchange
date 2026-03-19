@@ -166,6 +166,7 @@ version = "0.1.0"
 dependencies = [
  "prost",
  "prost-build",
+ "rand",
  "redis",
  "rust_decimal",
  "rust_decimal_macros",

@@ -20,7 +20,7 @@ fn main() {
         let bank_handle = Arc::clone(&shared_bank);
         thread::spawn(move || {
             println!("{} initializing", symbol);
-            let queue_key = config.get_redis_key();
+            let queue_key = market_config.get_redis_key();
             let worker = MarketWorker::new(
                 Arc::clone(&bank_handle),
                 redis_url.clone(),

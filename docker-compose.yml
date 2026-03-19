@@ -1,0 +1,18 @@
+services:
+  redis-master:
+    image: redis:7-alpine
+    container_name: redis-xtreme
+    # CRITICAL: Bypasses the Docker Virtual Bridge to solve the 1,100 TPS wall
+    network_mode: "host" 
+    restart: always
+    # Optimized for high-speed matching engine testing (No Disk I/O)
+    command: >
+      redis-server 
+      --save "" 
+      --appendonly no 
+      --tcp-keepalive 300
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
