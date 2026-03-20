@@ -1,22 +1,30 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use crate::trade::model::{Order, Side};
 
+pub struct OrderMetadata {
+
+}
 pub struct Orderbook {
     // Bids : Sorted descending (Highest price first)
     pub bids : BTreeMap<Decimal, VecDeque<Order>>,
 
     // Asks : Sorted Ascending (Lowest pirce first)
-    pub asks : BTreeMap<Decimal, VecDeque<Order>>
+    pub asks : BTreeMap<Decimal, VecDeque<Order>>,
+
+    // For cancellation : OrderId -> (Price, Side)
+    // This tells un where to find the order in the btreemap
+    pub orders_lookup: HashMap<u64, OrderMetadata>
 }
 
 impl Orderbook {
     pub fn new() -> Self {
         Self { 
             bids: BTreeMap::new(), 
-            asks: BTreeMap::new()
+            asks: BTreeMap::new(),
+            orders_lookup: HashMap::new()
         }
     }
 
