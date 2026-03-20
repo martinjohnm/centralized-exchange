@@ -28,9 +28,6 @@ mod tests {
         let asks_at_102 = engine.orderbook.get_level_mut(dec!(102), Side::Ask).unwrap();
         assert_eq!(asks_at_102[0].id, 2);
 
-        println!("{:#?}", engine.orderbook.asks);
-        println!("{:#?}", engine.orderbook.bids);
-
     }
 
     #[test]

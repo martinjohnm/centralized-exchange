@@ -4,8 +4,10 @@ use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use crate::trade::model::{Order, Side};
 
+#[derive(Debug, Clone, Copy)]
 pub struct OrderMetadata {
-
+    pub price: Decimal,
+    pub side: Side,
 }
 pub struct Orderbook {
     // Bids : Sorted descending (Highest price first)
@@ -30,6 +32,12 @@ impl Orderbook {
 
     pub fn add_order(&mut self, order: Order) {
 
+        // 1. Register in the Lookup HashMap first
+        // We store the price and side so the Cancel function knows exactly where to look
+        self.orders_lookup.insert(order.id, OrderMetadata {
+            price: order.price,
+            side: order.side,
+        });
         // use the side defined inside the order struct
         let side_map = match order.side {
             Side::Ask => &mut self.asks,
