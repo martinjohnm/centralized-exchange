@@ -36,6 +36,10 @@ impl MarketWorker {
             let mut engine = MatchingEngine::new(pair.clone());
             println!("{}", self.queue_key);
 
+            // 1. INITIALIZE TIMER OUTSIDE THE LOOP
+            let mut last_log_time = std::time::Instant::now();
+            let log_interval = std::time::Duration::from_millis(500);
+            
             loop {
                 // 1. BLOCK for the first item (prevents 100% CPU usage when idle)
                 // BRPOP returns [key, value]
@@ -68,58 +72,63 @@ impl MarketWorker {
                         continue;
                         }
                     };
-                    
-                    // 2. PRE - MATCH LOCK (CHECK and LOCK FUNDS)
+               
+                    //     // // 2. PRE-MATCH LOCK (Check and lock funds)
+                    //     // {
+                    //     //     let mut bank_guard = bank.lock().unwrap();
+                    //     //     if let Err(_) = bank_guard.lock_funds(order.user_id,"BTC/USDT", order.quantity) {
+                    //     //         continue;
+                    //     //     }
+                    //     // }
 
                     // 3. MATCH - (NO LOCK - MATCHING THE ORDERS)
                     let trades = engine.submit_order(order);
 
-                    // 4. POST MATCH - (THE SETTLEMENT AND FUND SWAPPING)
+                    //     // // 4. POST MATCH LOCK (Settle balances)
+                        
+                    //     // if !trades.is_empty() {
+                    //     //     // settle the trades here
+                    //     //     let mut bank_guard = bank.lock().unwrap();
 
+                    //     //     for trade in trades {
+                    //     //         bank_guard.settle_trade(
+                    //     //             trade.maker_id, 
+                    //     //             trade.taker_id, 
+                    //     //             trade.quantity, 
+                    //     //             trade.price * trade.quantity, 
+                    //     //             "BTC", 
+                    //     //             "USDT", 
+                    //     //             trade.taker_side
+                    //     //         );
+                    //     //         // Publish the trade event
+                    //     //         let _ : () = con.publish("trade_updates", serde_json::to_string(&trade).unwrap()).unwrap();
+                    //     //     }
+
+                    //     // }
+
+
+                    if !trades.is_empty() {
+                        for t in trades  {
+                            println!("{:?}", t.quantity);
+                        }
+                    }
 
                 }
-
-                engine.orderbook.get_order_book_stats();
-            }
-            // loop {
-            //     
-
-            //     // // 2. PRE-MATCH LOCK (Check and lock funds)
-            //     // {
-            //     //     let mut bank_guard = bank.lock().unwrap();
-            //     //     if let Err(_) = bank_guard.lock_funds(order.user_id,"BTC/USDT", order.quantity) {
-            //     //         continue;
-            //     //     }
-            //     // }
-
-            //     // // 3. MATCH - (NO lock - Pure logic)
-            //     // let trades = engine.submit_order(order);
-
-
-            //     // // 4. POST MATCH LOCK (Settle balances)
+            
+            // if last_log_time.elapsed() >= log_interval {
+            //     if let Some(fair_price) = engine.orderbook.calculate_mid_fair_price() {
+            //         println!(
+            //             "{:?} | {:?}", 
+            //             fair_price, 
+            //             engine.orderbook.get_order_book_stats()
+            //         );
+            //     }
                 
-            //     // if !trades.is_empty() {
-            //     //     // settle the trades here
-            //     //     let mut bank_guard = bank.lock().unwrap();
-
-            //     //     for trade in trades {
-            //     //         bank_guard.settle_trade(
-            //     //             trade.maker_id, 
-            //     //             trade.taker_id, 
-            //     //             trade.quantity, 
-            //     //             trade.price * trade.quantity, 
-            //     //             "BTC", 
-            //     //             "USDT", 
-            //     //             trade.taker_side
-            //     //         );
-            //     //         // Publish the trade event
-            //     //         let _ : () = con.publish("trade_updates", serde_json::to_string(&trade).unwrap()).unwrap();
-            //     //     }
-
-            //     // }
-
-
+            //     // 4. RESET THE TIMER
+            //     last_log_time = std::time::Instant::now();
             // }
+                
+            }
         });
     }
 }

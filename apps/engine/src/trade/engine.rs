@@ -55,7 +55,7 @@ impl MatchingEngine {
 
     // ---------------- PRIVATE: THe "Hot path" matching logic ----------------
     fn process_order(&mut self, mut taker_order: Order) -> Vec<Trade> {
-        let trades = Vec::new();
+        let mut trades = Vec::new();
 
         // loop on the quantity while it is non zero
         while taker_order.quantity > dec!(0) {
@@ -100,7 +100,14 @@ impl MatchingEngine {
                                 taker_order.quantity -= match_quantity;
                                 maker_order.quantity -= match_quantity;
                                 
-                                
+                                trades.push(Trade { 
+                                    maker_id: maker_order.id, 
+                                    taker_id: taker_order.id, 
+                                    price, 
+                                    quantity: match_quantity, 
+                                    taker_side: taker_order.side, 
+                                    maker_side: maker_order.side 
+                                });
                                 // if the maker partially filled we should put the order where it was
                                 if maker_order.quantity > dec!(0) {
                                     // Maker was only partially filled, put them back at the FRONT

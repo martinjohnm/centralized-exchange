@@ -1,4 +1,5 @@
 use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::collections::{BTreeMap, VecDeque};
 
 use crate::trade::model::{Order, Side};
@@ -54,6 +55,12 @@ impl Orderbook {
             "[Book Stats] Bids: {} (at {} prices) | Asks: {} (at {} prices)",
             total_bids, bid_prices, total_asks, ask_prices
         );
+    }
+
+    pub fn calculate_mid_fair_price(&self) -> Option<Decimal>  {
+        // next_back to get the highest key (Best bid)
+        self.best_bid().zip(self.best_ask())
+            .map(|(bid, ask) | (bid + ask) / dec!(2))
     }
 
     // get all the vecdeque array of orders of a price level 
