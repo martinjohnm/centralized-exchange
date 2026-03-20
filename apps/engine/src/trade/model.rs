@@ -31,7 +31,9 @@ pub struct Order {
     pub user_id : u64,
     pub quantity : Decimal,
     pub price : Decimal,
-    pub side : Side
+    pub side : Side,
+    pub action : Action,
+    pub order_type : OrderType
 }
 
 // This is used for fast lookup in the order table

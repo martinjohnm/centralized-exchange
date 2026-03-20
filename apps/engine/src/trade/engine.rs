@@ -38,7 +38,9 @@ impl MatchingEngine {
             user_id: req.user_id,
             price: req.price,
             quantity: req.quantity,
-            side: req.side
+            side: req.side,
+            action: req.action,
+            order_type: req.order_type
         };
 
         self.process_order(taker_order)
@@ -58,9 +60,15 @@ impl MatchingEngine {
         let mut trades = Vec::new();
 
         match taker_order.action {
-            Action::Create => self.process_create_order(taker_order, &mut trades),
-            Action::Cancel => {},
-            Action::CancelAll => {}
+            Action::Create => {
+                self.process_create_order(taker_order, &mut trades)
+            },
+            Action::Cancel => {
+                self.process_cancel(taker_order.user_id, taker_order.id);
+            },
+            Action::CancelAll => {
+                self.process_cancel_all(taker_order.user_id, taker_order.id);
+            }
         }        
         trades
     }
@@ -165,12 +173,12 @@ impl MatchingEngine {
         }
     }
 
-    fn process_cancel() {
+    fn process_cancel(&mut self, user_id: u64, order_id: u64) {
 
     }
 
-    fn process_cancel_all() {
-        
+    fn process_cancel_all(&mut self, user_id: u64, order_id: u64) {
+
     }
 
 }
