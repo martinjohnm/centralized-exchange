@@ -32,7 +32,9 @@ pub struct Order {
     pub price : Decimal,
     pub side : Side,
     pub action : Action,
-    pub order_type : OrderType
+    pub order_type : OrderType,
+    pub client_id : u64,
+    pub engine_id : u64
 }
 
 // This is used for fast lookup in the order table

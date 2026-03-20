@@ -1,15 +1,23 @@
+use std::collections::HashMap;
+
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 use crate::trade::{model::{Action, Order, OrderRequest, Side, Trade}, orderbook::Orderbook};
 
 
-
+type UserId = u64;
+type ClientOrderId = u64;
+type EngineOrderId = u64;
 
 pub struct MatchingEngine {
     pub orderbook : Orderbook,
+    // Incrementing orderId for unique identification
     current_order_id : u64,
-    pub asset_pair: String
+    pub asset_pair: String,
+    // maping a (userid, cleintId) pair to get the order id in engine for fastlookup while 
+    // canceling orders by market makers (Only for market making)
+    pub client_id_map: HashMap<(UserId, ClientOrderId), EngineOrderId>
 }
 
 impl MatchingEngine {
@@ -18,7 +26,8 @@ impl MatchingEngine {
         Self { 
             orderbook: Orderbook::new(), 
             current_order_id: 1, // Start at 1,
-            asset_pair : asset_pair.to_uppercase()
+            asset_pair : asset_pair.to_uppercase(),
+            client_id_map: HashMap::new()
         }
     }
 
@@ -40,7 +49,9 @@ impl MatchingEngine {
             quantity: req.quantity,
             side: req.side,
             action: req.action,
-            order_type: req.order_type
+            order_type: req.order_type,
+            client_id: req.client_id,
+            engine_id: req.engine_id
         };
 
         self.process_order(taker_order)
@@ -64,10 +75,29 @@ impl MatchingEngine {
                 self.process_create_order(taker_order, &mut trades)
             },
             Action::Cancel => {
-                self.process_cancel(taker_order.user_id, taker_order.id);
+
+                // 1. Determine the real Engine ID (From hashmap client_id_map (if it is retailer they should provide it in engine id))
+                let target_id = if taker_order.client_id != 0 {
+                    // It's a Market Maker: Look up their ClientID mapping
+                    self.client_id_map
+                        .get(&(taker_order.user_id, taker_order.client_id))
+                        .cloned()
+                        .unwrap_or(0)
+                } else {
+                    // It's a Retailer: They provided the EngineID directly
+                    taker_order.engine_id
+                };
+
+                // 2. Pass the final ID to the worker function
+                if target_id != 0 {
+                    self.process_cancel(taker_order.user_id, target_id);
+                }
+                
+                
             },
             Action::CancelAll => {
-                self.process_cancel_all(taker_order.user_id, taker_order.id);
+                // Cancells all the orders placed by the user 
+                self.process_cancel_all(taker_order.user_id);
             }
         }        
         trades
@@ -177,7 +207,7 @@ impl MatchingEngine {
 
     }
 
-    fn process_cancel_all(&mut self, user_id: u64, order_id: u64) {
+    fn process_cancel_all(&mut self, user_id: u64) {
 
     }
 

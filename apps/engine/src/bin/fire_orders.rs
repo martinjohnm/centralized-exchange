@@ -101,7 +101,8 @@ fn create_realistic_order(config: &MarketConfig, current_market_price: u64) -> O
         side,
         action : Action::Create as i32,
         order_type: OrderType::Limit as i32,
+        // Client id should be incremental from for each new order
         client_id : 1,  // used for the market makers to reduce the round trip time
-        engine_id: 3    // used by the retail users
+        engine_id: 0    // used by the retail users (default 0 because the engine module uses 1 as the order start id)
     }
 }
