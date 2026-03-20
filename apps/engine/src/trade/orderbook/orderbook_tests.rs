@@ -177,9 +177,18 @@ mod tests {
             side : Side::Bid
         });
 
+        // cancel an order at the level 100 which has 2 orders now
         book.cancel_order(*id_ref);
         let canceled_order = book.orders_lookup.get(id_ref);
         assert!(canceled_order.is_none());
+        // make sure the len of the price vec is 1 now
+        assert_eq!(book.get_level_mut(dec!(100), Side::Bid).unwrap().len(), 1);
         
+        // cancel the second order
+        let id_ref: &u64 = &2;
+        book.cancel_order(*id_ref);
+        // make sure the vec is removed
+        assert!(book.get_level_mut(dec!(100), Side::Bid).is_none());
+
     }
 }
