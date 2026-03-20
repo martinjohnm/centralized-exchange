@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
-use crate::trade::{model::{Order, OrderRequest, Side, Trade}, orderbook::Orderbook};
+use crate::trade::{model::{Action, Order, OrderRequest, Side, Trade}, orderbook::Orderbook};
 
 
 
@@ -57,6 +57,22 @@ impl MatchingEngine {
     fn process_order(&mut self, mut taker_order: Order) -> Vec<Trade> {
         let mut trades = Vec::new();
 
+        match taker_order.action {
+            Action::Create => self.process_create_order(taker_order, &mut trades),
+            Action::Cancel => {},
+            Action::CancelAll => {}
+        }        
+        trades
+    }
+
+    fn is_match(&self, taker_price: Decimal, best_price: Decimal, side: Side) -> bool {
+        match side {
+            Side::Ask => taker_price <= best_price,
+            Side::Bid => taker_price >= best_price
+        }
+    }
+
+    fn process_create_order(&mut self, mut taker_order : Order, trades: &mut Vec<Trade>) {
         // loop on the quantity while it is non zero
         while taker_order.quantity > dec!(0) {
             // 1. Look for the best price on the oposite side
@@ -147,14 +163,14 @@ impl MatchingEngine {
             // Taker is partially filled. Adding remaining to the orderbook.
             self.orderbook.add_order(taker_order);
         }
-        trades
     }
 
-    fn is_match(&self, taker_price: Decimal, best_price: Decimal, side: Side) -> bool {
-        match side {
-            Side::Ask => taker_price <= best_price,
-            Side::Bid => taker_price >= best_price
-        }
+    fn process_cancel() {
+
+    }
+
+    fn process_cancel_all() {
+        
     }
 
 }

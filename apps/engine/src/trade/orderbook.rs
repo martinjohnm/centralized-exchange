@@ -25,7 +25,7 @@ impl Orderbook {
         }
     }
 
-    pub fn add_order(&mut self, order: Order) {
+    pub fn add_order(&mut self, mut order:Order) {
 
         // 1. Register in the Lookup HashMap first
         // We store the price and side so the Cancel function knows exactly where to look
