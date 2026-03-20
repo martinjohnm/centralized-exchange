@@ -71,7 +71,6 @@ impl MarketWorker {
                         continue;
                         }
                     };
-                    println!("{:?}", order.action);
                     //     // // 2. PRE-MATCH LOCK (Check and lock funds)
                     //     // {
                     //     //     let mut bank_guard = bank.lock().unwrap();
