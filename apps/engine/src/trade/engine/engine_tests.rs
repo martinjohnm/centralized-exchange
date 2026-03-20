@@ -5,6 +5,10 @@ use rust_decimal_macros::dec;
 
 #[cfg(test)]
 mod tests {
+    use std::process::id;
+
+    use crate::trade::orderbook::OrderMetadata;
+
     use super::*;
 
     #[test]
@@ -21,6 +25,11 @@ mod tests {
         engine.orderbook.add_order(Order { id: 5,user_id: 2, quantity: dec!(1), price: dec!(98), side: Side::Bid });
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97), side: Side::Bid });
 
+        let id_ref: &u64 = &1;
+        assert_eq!(engine.orderbook.orders_lookup.get(id_ref).unwrap(), &OrderMetadata {
+            price : dec!(101),
+            side : Side::Ask
+        });
         // sent an buy order with quantity 1 and price : 101 (exact match for the best ask)
         engine.process_order(Order { id:7,user_id: 3, quantity: dec!(1), price: dec!(101), side: Side::Bid });
 

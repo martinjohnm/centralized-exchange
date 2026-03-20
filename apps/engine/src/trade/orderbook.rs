@@ -4,11 +4,6 @@ use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use crate::trade::model::{Order, Side};
 
-#[derive(Debug, Clone, Copy)]
-pub struct OrderMetadata {
-    pub price: Decimal,
-    pub side: Side,
-}
 pub struct Orderbook {
     // Bids : Sorted descending (Highest price first)
     pub bids : BTreeMap<Decimal, VecDeque<Order>>,
