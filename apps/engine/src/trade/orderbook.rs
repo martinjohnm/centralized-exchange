@@ -43,6 +43,19 @@ impl Orderbook {
         self.asks.keys().next().cloned()
     }
 
+    pub fn get_order_book_stats(&self) {
+        let bid_prices = self.bids.len();
+        let total_bids: usize = self.bids.values().map(|v| v.len()).sum();
+
+        let ask_prices = self.asks.len();
+        let total_asks: usize = self.asks.values().map(|v| v.len()).sum();
+
+        println!(
+            "[Book Stats] Bids: {} (at {} prices) | Asks: {} (at {} prices)",
+            total_bids, bid_prices, total_asks, ask_prices
+        );
+    }
+
     // get all the vecdeque array of orders of a price level 
     // which is Optin<&mut VecDeque(Order)> the ref & engine to modify list of orders(matching them) without taking 
     // the ownership of the entire orderbook

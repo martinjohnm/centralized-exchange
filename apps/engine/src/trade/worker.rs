@@ -51,29 +51,38 @@ impl MarketWorker {
                 // 3. PROCESS THE BATCH
                 // Now you have 100 orders in memory with only 2 Redis calls!
                 for binary_payload in batch {
+                    // println!("{:?}", binary_payload);
                     // Decode and Match logic goes here...
-                    // let order = OrderRequestProto::decode(&binary_payload[..]).unwrap();
+                    let order: OrderRequest = match OrderRequestProto::decode(&binary_payload[..]) {
+                        Ok(proto) => match OrderRequest::try_from(proto) {
+                            Ok(clean_order) => {
+                                clean_order
+                            },
+                            Err(e) => {
+                                eprintln!("Validation Failed: {}", e);
+                                continue;
+                            }
+                        },
+                        Err(e) => {
+                            eprintln!("Protobuf Decode Failed: {}", e);
+                        continue;
+                        }
+                    };
+                    
+                    // 2. PRE - MATCH LOCK (CHECK and LOCK FUNDS)
+
+                    // 3. MATCH - (NO LOCK - MATCHING THE ORDERS)
+                    let trades = engine.submit_order(order);
+
+                    // 4. POST MATCH - (THE SETTLEMENT AND FUND SWAPPING)
+
+
                 }
+
+                engine.orderbook.get_order_book_stats();
             }
             // loop {
-            //     // 1. BRPOP : wait for the order
-            //     let data : Vec<Vec<u8>> = con.brpop(&self.queue_key, 0.0).unwrap();
-            //     let binary_payload = &data[1];
-            //     // println!("{:?}", data);
-            //     // let order : OrderRequest = match OrderRequestProto::decode(&binary_payload[..]) {
-            //     //     Ok(proto) => match OrderRequest::try_from(proto) {
-            //     //         Ok(clean_order) => clean_order,
-            //     //         Err(e) => {
-            //     //             eprintln!("Validation Failed: {}", e);
-            //     //             continue;
-            //     //         }
-            //     //     },
-            //     //     Err(e) => {
-            //     //         eprintln!("Protobuf Decode Failed: {}", e);
-            //     //         continue;
-            //     //     }
-            //     // };
-            //     // println!("{:?}", order);
+            //     
 
             //     // // 2. PRE-MATCH LOCK (Check and lock funds)
             //     // {
