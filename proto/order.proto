@@ -8,6 +8,15 @@ enum Side {
     BID = 0;
     ASK = 1;
 }
+enum OrderType {
+    LIMIT = 0;
+    MARKET = 1;
+}
+enum Action {
+    CREATE = 0;
+    CANCEL = 1;
+    CANCEL_ALL = 2;
+}
 
 message OrderRequestProto {
     uint64 user_id = 1;
@@ -15,5 +24,7 @@ message OrderRequestProto {
     string quantity = 3;   // Sent as "0.01"
     Side side = 4;
     string symbol = 5;     // "BTC_USDT"
+    Action action = 6;
+    OrderType order_type = 7;
 }
 
