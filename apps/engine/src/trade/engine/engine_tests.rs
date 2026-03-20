@@ -7,7 +7,8 @@ use rust_decimal_macros::dec;
 mod tests {
     use std::process::id;
 
-    use crate::trade::orderbook::OrderMetadata;
+
+    use crate::trade::model::OrderMetadata;
 
     use super::*;
 
@@ -396,18 +397,5 @@ mod tests {
 
         let asks_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Ask).unwrap();
         assert_eq!(asks_at_99[0].quantity, dec!(70));
-    }
-    #[test]
-    fn test_order_add_and_cancel_test() {
-        // Add bids 
-        engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102), side: Side::Ask });
-        engine.orderbook.add_order(Order { id: 3,user_id: 1, quantity: dec!(1), price: dec!(103), side: Side::Ask });
-
-        // Add bids
-        engine.orderbook.add_order(Order { id: 4,user_id: 2, quantity: dec!(4), price: dec!(99), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 5,user_id: 2, quantity: dec!(5), price: dec!(98), side: Side::Bid });
-        engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97), side: Side::Bid });
-
     }
 }

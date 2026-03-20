@@ -61,7 +61,7 @@ impl Orderbook {
             Side::Bid => &mut self.bids
         };
 
-        if let(Some(queue)) = side_map.get_mut(&metadata.price) {
+        if let Some(queue) = side_map.get_mut(&metadata.price) {
             // 3. Remove the order from the VecDequeu
             // retain keeps all elements EXCEPT the one with ID
             queue.retain(|o| o.id != order_id);
