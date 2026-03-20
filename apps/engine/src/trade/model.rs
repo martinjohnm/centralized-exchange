@@ -2,7 +2,6 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use std::fs;
 use std::str::FromStr;
 
 
@@ -93,7 +92,9 @@ pub struct OrderRequest {
     pub side: Side,
     pub symbol: String,    // "BTC_USDT"
     pub action : Action,
-    pub order_type : OrderType
+    pub order_type : OrderType,
+    pub client_id : u64,
+    pub engine_id : u64
 }
 
 // 2. THE GENERATED TYPES (The "Dirty" ones from build.rs)
@@ -133,7 +134,9 @@ impl TryFrom<exchange_proto::OrderRequestProto> for OrderRequest {
             quantity: Decimal::from_str(&proto.quantity).map_err(|_| "Invalid qty".to_string())?,
             side,
             action,
-            order_type
+            order_type,
+            client_id : proto.client_id,
+            engine_id : proto.engine_id
         })
     }
 }

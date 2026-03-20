@@ -56,7 +56,7 @@ impl MatchingEngine {
     /// 5. **Rest**: Add remaining Taker volume to the book as the Limit order.
 
     // ---------------- PRIVATE: THe "Hot path" matching logic ----------------
-    fn process_order(&mut self, mut taker_order: Order) -> Vec<Trade> {
+    fn process_order(&mut self, taker_order: Order) -> Vec<Trade> {
         let mut trades = Vec::new();
 
         match taker_order.action {

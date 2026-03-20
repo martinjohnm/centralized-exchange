@@ -30,8 +30,8 @@ message OrderRequestProto {
     // use "Optional" Client ID Market maker cancel (A maping is present in the engine 
     // whcih is from clientId -> ENgineId in the engine mod to fast lookup for market makers
 
-    optional uint64 client_id = 8;
+    uint64 client_id = 8;
     // Optional Engine ID for the Retail cancels
-    optional uint64 engine_id = 9;
+    uint64 engine_id = 9;
 }
 

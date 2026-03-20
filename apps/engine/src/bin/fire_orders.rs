@@ -100,6 +100,8 @@ fn create_realistic_order(config: &MarketConfig, current_market_price: u64) -> O
         quantity: format!("{:.2}", qty), // 2 decimals for precision
         side,
         action : Action::Create as i32,
-        order_type: OrderType::Limit as i32
+        order_type: OrderType::Limit as i32,
+        client_id : 1,  // used for the market makers to reduce the round trip time
+        engine_id: 3    // used by the retail users
     }
 }
