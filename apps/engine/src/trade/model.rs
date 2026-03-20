@@ -6,7 +6,7 @@ use std::fs;
 use std::str::FromStr;
 
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub enum Side {
     Bid,
     Ask
@@ -18,6 +18,13 @@ pub struct Order {
     pub quantity : Decimal,
     pub price : Decimal,
     pub side : Side
+}
+
+// This is used for fast lookup in the order table
+#[derive(Debug, PartialEq, Clone, Copy)] 
+pub struct OrderMetadata {
+    pub price: Decimal,
+    pub side: Side,
 }
 
 impl Order {
