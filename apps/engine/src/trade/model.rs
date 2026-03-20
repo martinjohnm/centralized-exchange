@@ -11,6 +11,20 @@ pub enum Side {
     Bid,
     Ask
 }
+
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)] 
+pub enum Action {
+    Create,
+    Cancel,
+    CancelAll
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, Deserialize, Serialize)] 
+pub enum OrderType {
+    Limit,
+    Market
+}
+
 #[derive(Debug, Clone)]
 pub struct Order {
     pub id : u64,
@@ -76,6 +90,8 @@ pub struct OrderRequest {
     pub quantity: Decimal, 
     pub side: Side,
     pub symbol: String,    // "BTC_USDT"
+    pub action : Action,
+    pub order_type : OrderType
 }
 
 // 2. THE GENERATED TYPES (The "Dirty" ones from build.rs)
@@ -96,6 +112,17 @@ impl TryFrom<exchange_proto::OrderRequestProto> for OrderRequest {
             1 => Side::Ask,
             _ => return Err("Invalid Side".to_string()),
         };
+        let action = match proto.action {
+            0 => Action::Create,
+            1 => Action::Cancel,
+            2 => Action::CancelAll,
+            _ => return Err("Invalid  Action".to_string())
+        };
+        let order_type = match proto.order_type {
+            0 => OrderType::Limit,
+            1 => OrderType::Market,
+            _ => return Err("Invalid order type".to_string())
+        };
 
         Ok(OrderRequest {
             user_id: proto.user_id,
@@ -103,6 +130,8 @@ impl TryFrom<exchange_proto::OrderRequestProto> for OrderRequest {
             price: Decimal::from_str(&proto.price).map_err(|_| "Invalid price".to_string())?,
             quantity: Decimal::from_str(&proto.quantity).map_err(|_| "Invalid qty".to_string())?,
             side,
+            action,
+            order_type
         })
     }
 }

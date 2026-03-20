@@ -2,9 +2,8 @@ use std::{num::NonZeroUsize, sync::{Arc, Mutex}};
 
 use prost::Message;
 use redis::Commands;
-use serde::de::value::Error;
 
-use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest, exchange_proto::OrderRequestProto, load_markets}};
+use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest, exchange_proto::OrderRequestProto}};
 
 
 
@@ -37,7 +36,7 @@ impl MarketWorker {
             println!("{}", self.queue_key);
 
             // 1. INITIALIZE TIMER OUTSIDE THE LOOP
-            let mut last_log_time = std::time::Instant::now();
+            let last_log_time = std::time::Instant::now();
             let log_interval = std::time::Duration::from_millis(500);
             
             loop {
@@ -72,7 +71,6 @@ impl MarketWorker {
                         continue;
                         }
                     };
-               
                     //     // // 2. PRE-MATCH LOCK (Check and lock funds)
                     //     // {
                     //     //     let mut bank_guard = bank.lock().unwrap();

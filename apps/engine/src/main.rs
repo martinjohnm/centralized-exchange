@@ -23,7 +23,7 @@ fn main() {
             let queue_key = market_config.get_redis_key();
             let worker = MarketWorker::new(
                 Arc::clone(&bank_handle),
-                redis_url.clone(),
+                redis_url,
                 &symbol,
                 &queue_key
             );

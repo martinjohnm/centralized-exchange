@@ -1,6 +1,6 @@
 use std::thread;
 use std::time::Duration;
-use engine::trade::model::{MarketConfig, load_markets};
+use engine::trade::model::{Action, MarketConfig, OrderType, load_markets};
 use prost::Message;
 use redis::Commands;
 // Assuming your crate name in Cargo.toml is 'engine'
@@ -99,5 +99,7 @@ fn create_realistic_order(config: &MarketConfig, current_market_price: u64) -> O
         price: format!("{}.00", final_price),
         quantity: format!("{:.2}", qty), // 2 decimals for precision
         side,
+        action : Action::Create as i32,
+        order_type: OrderType::Limit as i32
     }
 }
