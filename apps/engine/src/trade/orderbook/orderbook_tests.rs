@@ -15,17 +15,17 @@ mod tests {
         let mut book = Orderbook::new();
 
         // Add bids out of order
-        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
-        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(150), side: Side::Bid });
-        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(120), side: Side::Bid });
+        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
+        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(150), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
+        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(120), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
         
         // Best bid should be highest (150)
         assert_eq!(book.best_bid(), Some(dec!(150)));
 
         // Add asks out of order 
-        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(300), side: Side::Ask });
-        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(290), side: Side::Ask });
-        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(450), side: Side::Ask });
+        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(300), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
+        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(290), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
+        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(450), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Best ask should be the Lowest (290)
         assert_eq!(book.best_ask(), Some(dec!(290)));
@@ -45,13 +45,13 @@ mod tests {
         let mut book = Orderbook::new();
 
         // Add first bid at 100
-        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add second bid at 100
-        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
         
         // Add third bid at 101
-        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(101), side: Side::Bid });
+        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(101), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Best bid must be 101
         assert_eq!(book.best_bid(), Some(dec!(101)));
@@ -63,13 +63,13 @@ mod tests {
 
 
         // Add first ask
-        book.add_order(Order { id: 4,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 4,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add second ask
-        book.add_order(Order { id: 5,user_id : 2, quantity: dec!(1), price: dec!(108), side: Side::Ask });
+        book.add_order(Order { id: 5,user_id : 2, quantity: dec!(1), price: dec!(108), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add third ask
-        book.add_order(Order { id: 6,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 6,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         assert_eq!(book.best_ask(), Some(dec!(108)));
 
@@ -92,22 +92,22 @@ mod tests {
         let mut book = Orderbook::new();
 
         // Add first bid at 100
-        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add second bid at 100
-        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
         
         // Add third bid at 101
-        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(101), side: Side::Bid });
+        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(101), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add first ask
-        book.add_order(Order { id: 4,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 4,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add second ask
-        book.add_order(Order { id: 5,user_id : 2, quantity: dec!(1), price: dec!(108), side: Side::Ask });
+        book.add_order(Order { id: 5,user_id : 2, quantity: dec!(1), price: dec!(108), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add third ask
-        book.add_order(Order { id: 6,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 6,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
 
         let bids_at_100 = book.get_level_mut(dec!(100), Side::Bid).unwrap();
@@ -125,22 +125,22 @@ mod tests {
         let mut book = Orderbook::new();
 
         // Add first bid at 100
-        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add second bid at 100
-        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
         
         // Add third bid at 101
-        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(101), side: Side::Bid });
+        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(101), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add first ask
-        book.add_order(Order { id: 4,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 4,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add second ask
-        book.add_order(Order { id: 5,user_id : 2, quantity: dec!(1), price: dec!(108), side: Side::Ask });
+        book.add_order(Order { id: 5,user_id : 2, quantity: dec!(1), price: dec!(108), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add third ask
-        book.add_order(Order { id: 6,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 6,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
 
         book.remove_level(dec!(100), Side::Bid);
@@ -154,22 +154,22 @@ mod tests {
         let mut book = Orderbook::new();
 
         // Add first bid at 100
-        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 1,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add second bid at 100
-        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid });
+        book.add_order(Order { id: 2,user_id : 2, quantity: dec!(1), price: dec!(100), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
         
         // Add third bid at 101
-        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(101), side: Side::Bid });
+        book.add_order(Order { id: 3,user_id : 2, quantity: dec!(1), price: dec!(101), side: Side::Bid, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add first ask
-        book.add_order(Order { id: 4,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 4,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add second ask
-        book.add_order(Order { id: 5,user_id : 2, quantity: dec!(1), price: dec!(108), side: Side::Ask });
+        book.add_order(Order { id: 5,user_id : 2, quantity: dec!(1), price: dec!(108), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         // Add third ask
-        book.add_order(Order { id: 6,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask });
+        book.add_order(Order { id: 6,user_id : 2, quantity: dec!(1), price: dec!(110), side: Side::Ask, action: crate::trade::model::Action::Create, order_type: crate::trade::model::OrderType::Limit });
 
         let id_ref: &u64 = &1;
         assert_eq!(book.orders_lookup.get(id_ref).unwrap(), &OrderMetadata {
