@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
-use crate::trade::{model::{Action, Order, OrderRequest, Side, Trade}, orderbook::Orderbook};
+use crate::trade::{model::{Action, Order, OrderRequest, Side, Trade}, orderbook::Orderbook, utils::{debug_print_book}};
 
 
 type UserId = u64;
@@ -201,6 +201,8 @@ impl MatchingEngine {
             // Taker is partially filled. Adding remaining to the orderbook.
             self.orderbook.add_order(taker_order);
         }
+        debug_print_book(&self.orderbook.bids, &self.orderbook.asks);
+        
     }
 
     fn process_cancel(&mut self, user_id: u64, order_id: u64) {

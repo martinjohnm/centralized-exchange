@@ -3,6 +3,7 @@ use rust_decimal_macros::dec;
 use std::collections::{BTreeMap, HashMap, VecDeque};
 
 use crate::trade::model::{Order, OrderMetadata, Side};
+#[derive(Debug, Clone)]
 
 pub struct Orderbook {
     // Bids : Sorted descending (Highest price first)
@@ -15,7 +16,6 @@ pub struct Orderbook {
     // This tells un where to find the order in the btreemap
     pub orders_lookup: HashMap<u64, OrderMetadata>
 }
-
 impl Orderbook {
     pub fn new() -> Self {
         Self { 

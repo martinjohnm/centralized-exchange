@@ -105,11 +105,7 @@ impl MarketWorker {
                     //     // }
 
 
-                    if !trades.is_empty() {
-                        for t in trades  {
-                            println!("{:?}", t.quantity);
-                        }
-                    }
+                    
 
                 }
             
