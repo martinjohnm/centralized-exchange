@@ -133,7 +133,3 @@ pub mod exchange_proto {
 // --- THE BRIDGE (The Conversion Logic) ---
 // This is the "TryFrom" trait. It attempts to turn the "Dirty" 
 // Protobuf struct into your "Clean" OrderRequest struct.
-
-impl for OrderRequest {
-    
-}
