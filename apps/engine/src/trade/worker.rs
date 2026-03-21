@@ -1,9 +1,8 @@
 use std::{num::NonZeroUsize, sync::{Arc, Mutex}};
 
-use prost::Message;
 use redis::Commands;
 
-use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest}};
+use crate::trade::{bank::Bank, engine::MatchingEngine};
 
 
 
@@ -32,7 +31,7 @@ impl MarketWorker {
 
         std::thread::spawn(move || {
             let mut con = client.get_connection().expect("Redis connection failed");
-            let mut engine = MatchingEngine::new(pair.clone());
+            let engine = MatchingEngine::new(pair.clone());
             println!("{}", self.queue_key);
 
             // 1. INITIALIZE TIMER OUTSIDE THE LOOP

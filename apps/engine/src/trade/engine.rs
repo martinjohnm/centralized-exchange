@@ -1,9 +1,8 @@
-use std::collections::{HashMap, HashSet};
 
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
-use crate::trade::{model::{Action, EngineError, EngineRequest, Order, OrderCancel, OrderCancelAll, OrderRequest, Side, Trade}, orderbook::Orderbook, utils::debug_print_book};
+use crate::trade::{model::{Action, EngineError, EngineRequest, Order, OrderCancel, OrderCancelAll, OrderRequest, Side, Trade}, orderbook::Orderbook};
 
 
 type UserId = u64;

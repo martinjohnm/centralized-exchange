@@ -1,8 +1,5 @@
-use std::thread;
 use std::time::Duration;
-use engine::trade::model::{Action, MarketConfig, OrderType, load_markets};
-use prost::Message;
-use redis::Commands;
+use engine::trade::model::load_markets;
 // Assuming your crate name in Cargo.toml is 'engine'
 fn main() {
     // Configuration
