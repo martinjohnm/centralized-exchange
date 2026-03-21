@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -17,7 +17,11 @@ pub struct MatchingEngine {
     pub asset_pair: String,
     // maping a (userid, cleintId) pair to get the order id in engine for fastlookup while 
     // canceling orders by market makers (Only for market making)
-    pub client_id_map: HashMap<(UserId, ClientOrderId), EngineOrderId>
+    pub client_id_map: HashMap<(UserId, ClientOrderId), EngineOrderId>,
+
+    // Key: UserID (u64)
+    // Value: HashSet of EngineIDs (u64)
+    pub user_orders: HashMap<u64, HashSet<u64>>,
 }
 
 impl MatchingEngine {
@@ -27,7 +31,8 @@ impl MatchingEngine {
             orderbook: Orderbook::new(), 
             current_order_id: 1, // Start at 1,
             asset_pair : asset_pair.to_uppercase(),
-            client_id_map: HashMap::new()
+            client_id_map: HashMap::new(),
+            user_orders : HashMap::new()
         }
     }
 
