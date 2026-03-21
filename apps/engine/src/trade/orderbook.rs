@@ -78,6 +78,8 @@ impl Orderbook {
         return true;
     }
 
+
+
     // Fn to get best bid (Highest)
     pub fn best_bid(&self) -> Option<Decimal> {
         self.bids.keys().next_back().cloned()

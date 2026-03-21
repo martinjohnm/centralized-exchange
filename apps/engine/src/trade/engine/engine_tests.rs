@@ -398,4 +398,45 @@ mod tests {
         let asks_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Ask).unwrap();
         assert_eq!(asks_at_99[0].quantity, dec!(70));
     }
+
+    #[test]
+    fn test_for_client_id_map() {
+        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        
+        // 1. Submit the order with client_id: 1
+        engine.submit_order(OrderRequest { 
+            user_id: 1, 
+            price: dec!(100), 
+            quantity: dec!(1), 
+            side: Side::Bid, 
+            symbol: String::from("BTC/USDT"), 
+            action: Action::Create, 
+            order_type: OrderType::Limit, 
+            client_id: 1, 
+            engine_id: 100 // Internal engine_id
+        });
+
+        // 2. VERIFY: Does the map contain the correct mapping?
+        let mapped_id = engine.client_id_map.get(&(1, 1)).cloned().unwrap_or(0);
+        assert_eq!(mapped_id, 100, "The client_id 1 should map to engine_id 100");
+
+        // 3. TEST CANCEL: Does it find the ID and then DELETE it?
+        engine.submit_order(OrderRequest { 
+            user_id: 1, 
+            price: dec!(100), 
+            quantity: dec!(1), 
+            side: Side::Bid, 
+            symbol: String::from("BTC/USDT"), 
+            action: Action::Cancel, // Action is Cancel
+            order_type: OrderType::Limit, 
+            client_id: 1,           // We use client_id to cancel
+            engine_id: 0            // engine_id is unknown to the whale
+        });
+
+        // 4. VERIFY: Is the mapping gone?
+        assert!(
+            !engine.client_id_map.contains_key(&(1, 1)), 
+            "The mapping should be purged after a successful cancel"
+        );
+    }
 }

@@ -72,17 +72,23 @@ impl MatchingEngine {
 
         match taker_order.action {
             Action::Create => {
+                // If a whale created the trade map his client_id -> engine_id map (if !client_id = 0)
+                if taker_order.client_id != 0 {
+                    self.client_id_map.insert(
+                        (taker_order.user_id, taker_order.client_id), 
+                        taker_order.engine_id
+                );
+                }
                 self.process_create_order(taker_order, &mut trades)
             },
             Action::Cancel => {
 
                 // 1. Determine the real Engine ID (From hashmap client_id_map (if it is retailer they should provide it in engine id))
                 let target_id = if taker_order.client_id != 0 {
-                    // It's a Market Maker: Look up their ClientID mapping
-                    self.client_id_map
-                        .get(&(taker_order.user_id, taker_order.client_id))
-                        .cloned()
-                        .unwrap_or(0)
+                    // It's a Market Maker: Look up their ClientID mapping 
+                    // lookup and delete in one go to save a hash look after
+                    // get it from the maping or default it to zero 
+                    self.client_id_map.remove(&(taker_order.user_id, taker_order.client_id)).unwrap_or(0)
                 } else {
                     // It's a Retailer: They provided the EngineID directly
                     taker_order.engine_id
@@ -201,7 +207,6 @@ impl MatchingEngine {
             // Taker is partially filled. Adding remaining to the orderbook.
             self.orderbook.add_order(taker_order);
         }
-        debug_print_book(&self.orderbook.bids, &self.orderbook.asks);
         
     }
 
