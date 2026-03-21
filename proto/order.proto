@@ -1,37 +1,51 @@
 syntax = "proto3";
-package exchange; // This determines the Rust module name
-
-
-// Protobuf starts at 0
+package exchange;
 
 enum Side {
-    BID = 0;
-    ASK = 1;
+    BUY = 0;
+    SELL = 1;
 }
+
 enum OrderType {
     LIMIT = 0;
     MARKET = 1;
 }
-enum Action {
-    CREATE = 0;
-    CANCEL = 1;
-    CANCEL_ALL = 2;
-}
 
-message OrderRequestProto {
+// Separate the Envelope from the Payload
+message ExchangeRequest {
     uint64 user_id = 1;
-    string price = 2;      // Sent as "50000.50"
-    string quantity = 3;   // Sent as "0.01"
-    Side side = 4;
-    string symbol = 5;     // "BTC_USDT"
-    Action action = 6;
-    OrderType order_type = 7;
+    uint64 timestamp = 2; // Critical for measuring latency (T1)
 
-    // use "Optional" Client ID Market maker cancel (A maping is present in the engine 
-    // whcih is from clientId -> ENgineId in the engine mod to fast lookup for market makers
-
-    uint64 client_id = 8;
-    // Optional Engine ID for the Retail cancels
-    uint64 engine_id = 9;
+    oneof action {
+        CreateOrder create = 3;
+        CancelOrder cancel = 4;
+        CancelAll   cancel_all = 5;
+        Deposit     deposit = 6;
+    }
 }
 
+message CreateOrder {
+    string symbol = 1;
+    string price = 2;
+    string quantity = 3;
+    Side side = 4;
+    OrderType order_type = 5;
+    uint64 client_id = 6; // For your MM mapping
+}
+
+message CancelOrder {
+    string symbol = 1;
+    // The engine tries client_id first, then engine_id
+    uint64 client_id = 2; 
+    uint64 engine_id = 3; 
+}
+
+message CancelAll {
+    string symbol = 1;
+}
+
+message Deposit {
+    string asset = 1; // "USDT"
+    string amount = 2;
+    uint64 tx_id = 3;  // For idempotency
+}

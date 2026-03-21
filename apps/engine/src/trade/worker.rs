@@ -3,7 +3,7 @@ use std::{num::NonZeroUsize, sync::{Arc, Mutex}};
 use prost::Message;
 use redis::Commands;
 
-use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest, exchange_proto::OrderRequestProto}};
+use crate::trade::{bank::Bank, engine::MatchingEngine, model::{OrderRequest}};
 
 
 
@@ -56,21 +56,21 @@ impl MarketWorker {
                 for binary_payload in batch {
                     // println!("{:?}", binary_payload);
                     // Decode and Match logic goes here...
-                    let order: OrderRequest = match OrderRequestProto::decode(&binary_payload[..]) {
-                        Ok(proto) => match OrderRequest::try_from(proto) {
-                            Ok(clean_order) => {
-                                clean_order
-                            },
-                            Err(e) => {
-                                eprintln!("Validation Failed: {}", e);
-                                continue;
-                            }
-                        },
-                        Err(e) => {
-                            eprintln!("Protobuf Decode Failed: {}", e);
-                        continue;
-                        }
-                    };
+                    // let order: OrderRequest = match ExchangeRequest::decode(&binary_payload[..]) {
+                    //     Ok(proto) => match OrderRequest::try_from(proto) {
+                    //         Ok(clean_order) => {
+                    //             clean_order
+                    //         },
+                    //         Err(e) => {
+                    //             eprintln!("Validation Failed: {}", e);
+                    //             continue;
+                    //         }
+                    //     },
+                    //     Err(e) => {
+                    //         eprintln!("Protobuf Decode Failed: {}", e);
+                    //     continue;
+                    //     }
+                    // };
                     //     // // 2. PRE-MATCH LOCK (Check and lock funds)
                     //     // {
                     //     //     let mut bank_guard = bank.lock().unwrap();
@@ -80,7 +80,7 @@ impl MarketWorker {
                     //     // }
 
                     // 3. MATCH - (NO LOCK - MATCHING THE ORDERS)
-                    engine.process_order(order);
+                    // engine.process_order(order);
 
                     //     // // 4. POST MATCH LOCK (Settle balances)
                         

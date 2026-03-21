@@ -134,37 +134,6 @@ pub mod exchange_proto {
 // This is the "TryFrom" trait. It attempts to turn the "Dirty" 
 // Protobuf struct into your "Clean" OrderRequest struct.
 
-impl TryFrom<exchange_proto::OrderRequestProto> for OrderRequest {
-    type Error = String;
-
-    fn try_from(proto: exchange_proto::OrderRequestProto) -> Result<Self, Self::Error> {
-        let side = match proto.side {
-            0 => Side::Bid,
-            1 => Side::Ask,
-            _ => return Err("Invalid Side".to_string()),
-        };
-        let action = match proto.action {
-            0 => Action::Create,
-            1 => Action::Cancel,
-            2 => Action::CancelAll,
-            _ => return Err("Invalid  Action".to_string())
-        };
-        let order_type = match proto.order_type {
-            0 => OrderType::Limit,
-            1 => OrderType::Market,
-            _ => return Err("Invalid order type".to_string())
-        };
-
-        Ok(OrderRequest {
-            user_id: proto.user_id,
-            symbol: proto.symbol,
-            price: Decimal::from_str(&proto.price).map_err(|_| "Invalid price".to_string())?,
-            quantity: Decimal::from_str(&proto.quantity).map_err(|_| "Invalid qty".to_string())?,
-            side,
-            action,
-            order_type,
-            client_id : proto.client_id,
-            engine_id : proto.engine_id
-        })
-    }
+impl for OrderRequest {
+    
 }

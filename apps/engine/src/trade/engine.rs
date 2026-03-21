@@ -55,7 +55,7 @@ impl MatchingEngine {
                         let mut trades = Vec::new();
                         
                         self.process_create_order(create_order, &mut trades)
-                    
+                        
                     },
                     EngineRequest::Cancel(cancel_order) => {
 
