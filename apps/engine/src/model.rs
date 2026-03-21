@@ -33,17 +33,16 @@ pub mod exchange_proto {
 
 // Bring the Proto types into local scope for the TryFrom logic
 // 'exchange' refers to the 'package exchange;' line in your .proto
-
-// ---- 3. The Firewall (Conversion Logic) ----
+// --- 3. THE FIREWALL (Conversion Logic) ---
 impl TryFrom<ExchangeRequest> for OrderRequest {
-    
     type Error = String;
+
     fn try_from(proto: ExchangeRequest) -> Result<Self, Self::Error> {
         let user_id = proto.user_id;
         let timestamp = proto.timestamp;
 
         // Extract the oneof action
-        let action = proto.action.ok_or("No action provided in request");
+        let action_payload = proto.action.ok_or("No action provided in request")?;
 
         match action_payload {
             // Case: Creating a new Order
@@ -52,8 +51,8 @@ impl TryFrom<ExchangeRequest> for OrderRequest {
                 timestamp,
                 symbol: c.symbol,
                 side: if c.side == 0 { Side::Buy } else { Side::Sell },
-                price: Some(Decimal::from_str(&c.price).map_err(|_| "Invalid Price Format")?),
-                quantity: Some(Decimal::from_str(&c.quantity).map_err(|_| "Invalid Qty Format")?),
+                price: Some(Decimal::from_str_exact(&c.price).map_err(|_| "Invalid Price Format")?),
+                quantity: Some(Decimal::from_str_exact(&c.quantity).map_err(|_| "Invalid Qty Format")?),
                 order_type: if c.order_type == 0 { OrderType::Limit } else { OrderType::Market },
                 action: ActionType::Create,
                 client_id: Some(c.client_id),
@@ -74,7 +73,7 @@ impl TryFrom<ExchangeRequest> for OrderRequest {
                 engine_id: if c.engine_id != 0 { Some(c.engine_id) } else { None },
             }),
 
-            // Case: Deposit (You can expand this later)
+            // Case: expand this later
             Action::Deposit(_) => Err("Deposit logic belongs in the Bank module".to_string()),
             
             _ => Err("Unsupported action type".to_string()),
