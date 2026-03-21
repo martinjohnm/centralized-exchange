@@ -101,16 +101,20 @@ impl MatchingEngine {
 
                 // 2. Pass the final ID to the worker function
                 if target_id != 0 {
-                    self.process_cancel(taker_order.user_id, target_id);
+                    self.process_cancel(target_id);
                 }
                 
                 
             },
             Action::CancelAll => {
-                // Cancells all the orders placed by the user 
-
-                // 1. this should remove the engineid for this user from client_id map
-                self.process_cancel_all(taker_order.user_id);
+                
+                // 1. Atomically take the entire set of orders for this user
+                if let Some(order_ids) = self.user_orders.remove(&taker_order.user_id) {
+                    // 2. Loop through every active engine_id they have
+                    for eid in order_ids {
+                        self.process_cancel(eid);
+                    }
+                }
             }
         }        
         trades
@@ -224,7 +228,7 @@ impl MatchingEngine {
         
     }
 
-    fn process_cancel(&mut self, user_id: u64, order_id: u64) {
+    fn process_cancel(&mut self, order_id: u64) {
 
     }
 
