@@ -170,8 +170,15 @@ impl MatchingEngine {
                                     taker_side: taker_order.side, 
                                     maker_side: maker_order.side 
                                 });
-                                // if the maker partially filled we should put the order where it was
-                                if maker_order.quantity > dec!(0) {
+
+                                // if the order fully filled we should remove it from both the clien_id_map and 
+                                // from the user_orders map 
+                                if maker_order.quantity == dec!(0) {
+                                    // 1. client_id_map removal
+                                    // 2. user_orders_map removal
+
+                                } // if the maker partially filled we should put the order where it was
+                                else  {
                                     // Maker was only partially filled, put them back at the FRONT
                                     // Before mut borrow took the order from Vecdeque 
                                     // (we should put it back to the front itself)
