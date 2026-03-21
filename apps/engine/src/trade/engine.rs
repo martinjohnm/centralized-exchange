@@ -103,6 +103,8 @@ impl MatchingEngine {
             },
             Action::CancelAll => {
                 // Cancells all the orders placed by the user 
+
+                // 1. this should remove the engineid for this user from client_id map
                 self.process_cancel_all(taker_order.user_id);
             }
         }        
