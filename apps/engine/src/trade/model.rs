@@ -24,6 +24,19 @@ pub enum OrderType {
     Market
 }
 
+
+#[derive(Debug, Clone)]
+pub enum EngineRequest {
+    Create(Order),
+    Cancel(OrderCancel),
+    CancelAll(OrderCancelAll)
+}
+#[derive(Debug)]
+pub enum EngineError {
+    MissingField(&'static str),
+    InvalidAction,
+}
+
 #[derive(Debug, Clone)]
 pub struct Order {
     pub id : u64,
@@ -35,6 +48,19 @@ pub struct Order {
     pub order_type : OrderType,
     pub client_id : u64,
     pub engine_id : u64
+}
+
+#[derive(Debug, Clone)]
+pub struct OrderCancel {
+    pub user_id : u64,
+    pub client_id : u64,
+    pub engine_id : u64
+}
+
+
+#[derive(Debug, Clone)]
+pub struct OrderCancelAll {
+    pub user_id : u64
 }
 
 // This is used for fast lookup in the order table

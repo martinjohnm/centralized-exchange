@@ -9,7 +9,7 @@ use engine::trade::model::exchange_proto::OrderRequestProto;
 fn main() {
     // Configuration
     let redis_url = "redis://127.0.0.1/";
-    let orders_per_second = 1000; 
+    let orders_per_second = 10000; 
     let delay = Duration::from_millis(1000 / orders_per_second);
 
     println!("Spawning fire thread at {} orders/sec", orders_per_second);

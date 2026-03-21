@@ -15,7 +15,7 @@ mod tests {
     #[test]
     fn test_buy_order_full_fills_and_single_level() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
-
+        let mut trades:Vec<Trade> = Vec::new();
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
         engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(1), price: dec!(102),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -32,7 +32,7 @@ mod tests {
             side : Side::Ask
         });
         // sent an buy order with quantity 1 and price : 101 (exact match for the best ask)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid}, &mut trades);
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)));
         let asks_at_102 = engine.orderbook.get_level_mut(dec!(102), Side::Ask).unwrap();
@@ -43,6 +43,7 @@ mod tests {
     #[test]
     fn test_buy_order_single_level_low_price_fill_complete() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(3), price: dec!(100),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -55,7 +56,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an buy order with quantity 4 and price : 101 (3 order match from the 100 and 1 from the 101)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(3), price: dec!(102),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(3), price: dec!(102),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid }, &mut trades);
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(101)));
 
@@ -67,6 +68,7 @@ mod tests {
     #[test]
     fn test_buy_order_multiple_level_full_fills() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(3), price: dec!(100),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -79,7 +81,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an buy order with quantity 4 and price : 101 (3 order match from the 100 and 1 from the 101)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(4), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(4), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid }, &mut trades);
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)))
     }
@@ -87,6 +89,7 @@ mod tests {
     #[test]
     fn test_buy_order_multiple_level_partial_fills() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(3), price: dec!(100),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -99,7 +102,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an buy order with quantity 4 and price : 101 (3 order match from the 100 and 1 from the 101)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(5), price: dec!(102),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(5), price: dec!(102),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid }, &mut trades);
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)));
 
@@ -113,12 +116,13 @@ mod tests {
     #[test]
     fn test_whale_activity_of_eating_entire_asks () {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(4), price: dec!(100),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
         engine.orderbook.add_order(Order { id: 2,user_id: 1, quantity: dec!(5), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
         
-        engine.process_order(Order { id:3,user_id: 2, quantity: dec!(10), price: dec!(110),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
+        engine.process_create_order(Order { id:3,user_id: 2, quantity: dec!(10), price: dec!(110),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid }, &mut trades);
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(110)));
         let bids_at_110 =  engine.orderbook.get_level_mut(dec!(110), Side::Bid).unwrap();
@@ -129,6 +133,7 @@ mod tests {
     #[test]
     fn test_single_level_sell_order() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -141,7 +146,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an sell order with quantity 1 and price : 99 (exact match for the best abidsk)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(1), price: dec!(99),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(1), price: dec!(99),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask },&mut trades);
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(98)));
         let bids_at_98 = engine.orderbook.get_level_mut(dec!(98), Side::Bid).unwrap();
@@ -151,6 +156,7 @@ mod tests {
     #[test]
     fn test_single_level_partial_fill_sell_order() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -163,7 +169,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an sell order with quantity 1 and price : 99 (exact match for the best bid)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(1), price: dec!(99),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(1), price: dec!(99),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask }, &mut trades);
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(99)));
         let bids_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Bid).unwrap();
@@ -174,6 +180,7 @@ mod tests {
     #[test]
     fn test_single_level_full_fill_low_price_sell_order() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -186,7 +193,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an sell order with quantity 6 and price : 97 (exact match for the best bid)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(6), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(6), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask }, &mut trades);
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(98)));
         let bids_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Bid);
@@ -196,6 +203,7 @@ mod tests {
     #[test]
     fn test_single_level_partial_fill_low_price_sell_order() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -208,7 +216,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an sell order with quantity 4 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(4), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(4), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask }, &mut trades);
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(99)));
         let bids_at_99 = engine.orderbook.get_level_mut(dec!(99), Side::Bid).unwrap();
@@ -218,6 +226,7 @@ mod tests {
     #[test]
     fn test_multi_level_partial_fill_low_price_sell_order() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -230,7 +239,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an sell order with quantity 7 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(7), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(7), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask }, &mut trades);
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(98)));
         let bids_at_98 = engine.orderbook.get_level_mut(dec!(98), Side::Bid).unwrap();
@@ -240,6 +249,7 @@ mod tests {
     #[test]
     fn test_multi_level_full_fill_low_price_sell_order() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -252,7 +262,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an sell order with quantity 9 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(9), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(9), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask }, &mut trades);
 
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(97)));
         let bids_at_97 = engine.orderbook.get_level_mut(dec!(97), Side::Bid).unwrap();
@@ -262,6 +272,7 @@ mod tests {
     #[test]
     fn test_whale_activity_eating_entire_bids() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -274,7 +285,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an sell order with quantity 7 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7,user_id: 3, quantity: dec!(70), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
+        engine.process_create_order(Order { id:7,user_id: 3, quantity: dec!(70), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask }, &mut trades);
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(96)));
         let asks_at_96 = engine.orderbook.get_level_mut(dec!(96), Side::Ask).unwrap();
@@ -284,6 +295,7 @@ mod tests {
     #[test]
     fn test_self_trade_buy_cancel_maker_same_user_id() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -296,7 +308,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an sell order with quantity 7 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(70), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
+        engine.process_create_order(Order { id:7,user_id: 1, quantity: dec!(70), price: dec!(96),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask }, &mut trades);
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(96)));
         let asks_at_96 = engine.orderbook.get_level_mut(dec!(96), Side::Ask).unwrap();
@@ -306,6 +318,7 @@ mod tests {
     #[test]
     fn test_self_trade_buy_cancel_maker_same_different_id() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -318,7 +331,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an buy order with quantity 1 and price : 101 
-        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
+        engine.process_create_order(Order { id:7,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid }, &mut trades);
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(102)));
         
@@ -329,6 +342,7 @@ mod tests {
     #[test]
     fn test_self_trade_buy_cancel_maker_same_different_id_2() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -341,7 +355,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an buy order with quantity 1 and price : 102 
-        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(1), price: dec!(102),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
+        engine.process_create_order(Order { id:7,user_id: 1, quantity: dec!(1), price: dec!(102),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid }, &mut trades);
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(103)));
         
@@ -352,6 +366,7 @@ mod tests {
     #[test]
     fn test_self_trade_buy_cancel_maker_same_different_id_3_whale_buy() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -364,7 +379,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an buy order with quantity 1 and price : 102 
-        engine.process_order(Order { id:7,user_id: 1, quantity: dec!(30), price: dec!(110),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
+        engine.process_create_order(Order { id:7,user_id: 1, quantity: dec!(30), price: dec!(110),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid }, &mut trades);
 
         assert!(engine.orderbook.best_ask().is_none(), "Whale at all the asks now sits at buy side");
         
@@ -376,6 +391,7 @@ mod tests {
     #[test]
     fn test_self_trade_sell_cancel_maker_same_user_id() {
         let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
+        let mut trades:Vec<Trade> = Vec::new();
 
         // Add bids 
         engine.orderbook.add_order(Order { id: 1,user_id: 1, quantity: dec!(1), price: dec!(101),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
@@ -388,7 +404,7 @@ mod tests {
         engine.orderbook.add_order(Order { id: 6,user_id: 2, quantity: dec!(1), price: dec!(97),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Bid });
 
         // sent an sell order with quantity 7 and price : 96 (partial match for the best bid)
-        engine.process_order(Order { id:7,user_id: 2, quantity: dec!(70), price: dec!(99),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask });
+        engine.process_create_order(Order { id:7,user_id: 2, quantity: dec!(70), price: dec!(99),action: Action::Create, order_type: OrderType::Limit,client_id: 0, engine_id: 0, side: Side::Ask }, &mut trades);
 
         assert_eq!(engine.orderbook.best_ask(), Some(dec!(99)));
         assert_eq!(engine.orderbook.best_bid(), Some(dec!(98)));
@@ -399,44 +415,4 @@ mod tests {
         assert_eq!(asks_at_99[0].quantity, dec!(70));
     }
 
-    #[test]
-    fn test_for_client_id_map() {
-        let mut engine = MatchingEngine::new(String::from("BTC/USDT"));
-        
-        // 1. Submit the order with client_id: 1
-        engine.submit_order(OrderRequest { 
-            user_id: 1, 
-            price: dec!(100), 
-            quantity: dec!(1), 
-            side: Side::Bid, 
-            symbol: String::from("BTC/USDT"), 
-            action: Action::Create, 
-            order_type: OrderType::Limit, 
-            client_id: 1, 
-            engine_id: 100 // Internal engine_id
-        });
-
-        // 2. VERIFY: Does the map contain the correct mapping?
-        let mapped_id = engine.client_id_map.get(&(1, 1)).cloned().unwrap_or(0);
-        assert_eq!(mapped_id, 100, "The client_id 1 should map to engine_id 100");
-
-        // 3. TEST CANCEL: Does it find the ID and then DELETE it?
-        engine.submit_order(OrderRequest { 
-            user_id: 1, 
-            price: dec!(100), 
-            quantity: dec!(1), 
-            side: Side::Bid, 
-            symbol: String::from("BTC/USDT"), 
-            action: Action::Cancel, // Action is Cancel
-            order_type: OrderType::Limit, 
-            client_id: 1,           // We use client_id to cancel
-            engine_id: 0            // engine_id is unknown to the whale
-        });
-
-        // 4. VERIFY: Is the mapping gone?
-        assert!(
-            !engine.client_id_map.contains_key(&(1, 1)), 
-            "The mapping should be purged after a successful cancel"
-        );
-    }
 }

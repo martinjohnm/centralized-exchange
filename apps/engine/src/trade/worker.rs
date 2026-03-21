@@ -80,7 +80,7 @@ impl MarketWorker {
                     //     // }
 
                     // 3. MATCH - (NO LOCK - MATCHING THE ORDERS)
-                    let trades = engine.submit_order(order);
+                    engine.process_order(order);
 
                     //     // // 4. POST MATCH LOCK (Settle balances)
                         
