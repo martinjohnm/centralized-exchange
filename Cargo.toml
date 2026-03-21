@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "apps/engine",     # Path to Rust matching engine
-    "apps/ws-server",  # Path to Rust websocket server
+    "apps/engine"     # Path to Rust matching engine
 ]
 resolver = "2"
