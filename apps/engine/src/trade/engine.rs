@@ -228,9 +228,6 @@ impl MatchingEngine {
 
     }
 
-    fn process_cancel_all(&mut self, user_id: u64) {
-
-    }
 
 }
 
