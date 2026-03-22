@@ -27,3 +27,20 @@ impl MarketConfig {
         format!("{}_{}", self.base, self.quote)
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_markets_validity() {
+        // This will panic if the JSON is malformed or the file is missing,
+        // which is exactly what we want to catch in a test.
+        let markets = load_markets();
+        
+        // Assert that the map isn't empty
+        assert!(!markets.is_empty(), "Markets map should not be empty");
+
+        // Optional: Check for a specific key you know should exist
+        // assert!(markets.contains_key("BTC-USD"));
+    }
+}
