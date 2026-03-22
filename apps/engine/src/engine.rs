@@ -9,12 +9,12 @@ type EngineOrderId = u64;
 pub struct Engine {
     symbol: String,
 
-    // maping a (userid, cleintId) pair to get the order id in engine for fastlookup while 
-    // canceling orders by market makers (Only for market making)
+    // Key   : user_id, maping a (userid, cleintId) pair to get the order id in engine for fastlookup while 
+    // Value : engine_id, canceling orders by market makers (Only for market making)
     pub client_id_map : HashMap<(UserId, ClientOrderId), EngineOrderId>,
 
-    // Key : UserId (u64)
-    // Value: Hashset of engineIds 
+    // Key   : user_id
+    // Value : Set(engine_id), A HashSet of all active internal_order_ids for this user
     pub user_orders : HashMap<UserId, HashSet<EngineOrderId>>
 }
 
