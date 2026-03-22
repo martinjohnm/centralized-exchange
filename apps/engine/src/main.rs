@@ -2,8 +2,8 @@ mod engine;
 mod model;
 mod utils;
 mod worker;
-
-use crate::{engine::Engine, utils::load_markets, worker::Worker};
+mod orderbook;
+use crate::{utils::load_markets, worker::Worker};
 use std::thread;
 
 fn main() {
@@ -14,7 +14,7 @@ fn main() {
     println!("Starting Exchange Engine...");
 
     // 2. Spawn sharded market threads
-    for (symbol_key, config) in markets {
+    for (_, config) in markets {
         // Prepare local copies for the thread move
         let redis_url = redis_url.to_string();
         let queue = config.get_redis_key().to_string();

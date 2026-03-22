@@ -22,8 +22,8 @@ impl Worker {
         let symbol = symbol.to_string();
         let redis_client = redis::Client::open(redis_url).unwrap();
 
-        let mut engine = Engine::new(symbol.clone());
-        let mut connection = redis_client.get_connection().expect("failed to connect to redis");
+        let engine = Engine::new(symbol.clone());
+        let connection = redis_client.get_connection().expect("failed to connect to redis");
 
         Self { 
             queue_key,
@@ -37,8 +37,8 @@ impl Worker {
         // 1. Poll redis (Blocking call)
       
         // 1. INITIALIZE TIMER OUTSIDE THE LOOP
-        let mut last_log_time = std::time::Instant::now();
-        let log_interval = std::time::Duration::from_millis(500);
+        let mut _last_log_time = std::time::Instant::now();
+        let _log_interval = std::time::Duration::from_millis(500);
 
 
         loop {

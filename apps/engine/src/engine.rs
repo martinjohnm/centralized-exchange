@@ -1,29 +1,20 @@
-use std::collections::{HashMap, HashSet};
 
-use crate::model::{ActionType, OrderRequest, exchange_proto::ExchangeRequest};
-
-type UserId = u64;
-type ClientOrderId = u64;
-type EngineOrderId = u64;
+use crate::{model::{ActionType, OrderRequest}, orderbook::Orderbook};
 
 pub struct Engine {
     symbol: String,
+    // engine_id (strictly increasing)
+    current_engine_id : u64, // It has a helper to create next engine_id
 
-    // Key   : user_id, maping a (userid, cleintId) pair to get the order id in engine for fastlookup while 
-    // Value : engine_id, canceling orders by market makers (Only for market making)
-    pub client_id_map : HashMap<(UserId, ClientOrderId), EngineOrderId>,
-
-    // Key   : user_id
-    // Value : Set(engine_id), A HashSet of all active internal_order_ids for this user
-    pub user_orders : HashMap<UserId, HashSet<EngineOrderId>>
+    pub orderbook : Orderbook
 }
 
 impl Engine {
     pub fn new(symbol: String) -> Self {
         Self { 
             symbol,
-            client_id_map : HashMap::new(),
-            user_orders : HashMap::new()
+            current_engine_id : 1, // start at zero
+            orderbook : Orderbook::new()
         }
     }
 
@@ -45,22 +36,35 @@ impl Engine {
         }
     }
 
-    fn handle_create(&mut self, order: OrderRequest) {
+    // -----------Request handlers --------------------------
+    fn handle_create(&mut self, _order: OrderRequest) {
         // Logic for adding to BTreeMap Orderbook goes here
         // 1. add to the client_id_engine_id map
         // 2. add to the order_users map
-
+        
     }
 
-    fn handle_cancel(&mut self, order: OrderRequest) {
+    fn handle_cancel(&mut self, _order: OrderRequest) {
        
     }
 
-    fn handle_deposit(&mut self, order: OrderRequest) {
+    fn handle_deposit(&mut self, _order: OrderRequest) {
         
     }
 
-    fn handle_cancel_all(&mut self, order: OrderRequest) {
+    fn handle_cancel_all(&mut self, _order: OrderRequest) {
         
     }
+
+
+    // ------------Helpers--------------------------------
+    // 1.0 ====== Helper to create next_engine_id========
+    fn next_engine_id(&mut self) -> u64 {
+        let next_engine_id = self.current_engine_id;
+        self.current_engine_id += 1;
+        next_engine_id
+    }
+
+
+
 }
