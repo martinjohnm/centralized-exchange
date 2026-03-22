@@ -3,6 +3,7 @@ mod model;
 mod utils;
 mod worker;
 mod orderbook;
+mod ledger;
 use crate::{utils::load_markets, worker::Worker};
 use std::thread;
 

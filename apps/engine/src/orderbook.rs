@@ -2,19 +2,18 @@ use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 
 use rust_decimal::Decimal;
 
+use crate::model::{ClientOrderId, EngineOrderId, OrderRequest, UserId};
 
-type UserId = u64;
-type ClientOrderId = u64;
-type EngineOrderId = u64;
+
 
 
 pub struct Orderbook {
 
     // Bids : Sorted descending (Highest price first)
-    pub bids : BTreeMap<Decimal, VecDeque<>>,
+    pub bids : BTreeMap<Decimal, VecDeque<OrderRequest>>,
 
     // Asks : Sorted ascending  (Lowest price first)
-    pub asks : BTreeMap<Decimal, VecDeque<>>,
+    pub asks : BTreeMap<Decimal, VecDeque<OrderRequest>>,
 
     // Key   : user_id, maping a (userid, cleintId) pair to get the order id in engine for fastlookup while 
     // Value : engine_id, canceling orders by market makers (Only for market making)

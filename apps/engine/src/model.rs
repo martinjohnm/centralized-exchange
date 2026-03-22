@@ -76,7 +76,16 @@ impl TryFrom<ExchangeRequest> for OrderRequest {
             // Case: expand this later
             Action::Deposit(_) => Err("Deposit logic belongs in the Bank module".to_string()),
             
-            _ => Err("Unsupported action type".to_string()),
+            _ => Err("Unsupported action pub type".to_string()),
         }
     }
 }
+
+
+
+
+// =========== Some More Types ====================
+pub type UserId = u64;
+pub type ClientOrderId = u64;
+pub type EngineOrderId = u64;
+pub type Asset = String;
