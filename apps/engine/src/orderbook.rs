@@ -1,4 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+
+use rust_decimal::Decimal;
 
 
 type UserId = u64;
@@ -7,6 +9,12 @@ type EngineOrderId = u64;
 
 
 pub struct Orderbook {
+
+    // Bids : Sorted descending (Highest price first)
+    pub bids : BTreeMap<Decimal, VecDeque<>>,
+
+    // Asks : Sorted ascending  (Lowest price first)
+    pub asks : BTreeMap<Decimal, VecDeque<>>,
 
     // Key   : user_id, maping a (userid, cleintId) pair to get the order id in engine for fastlookup while 
     // Value : engine_id, canceling orders by market makers (Only for market making)
@@ -20,7 +28,9 @@ pub struct Orderbook {
 
 impl Orderbook {
     pub fn new() -> Self {
-        Self { 
+        Self {
+            bids : BTreeMap::new(),
+            asks : BTreeMap::new(),
             client_id_map: HashMap::new(), 
             user_orders: HashMap::new()
         }
