@@ -82,6 +82,18 @@ impl TryFrom<ExchangeRequest> for OrderRequest {
 }
 
 
+// LEdger types 
+#[derive(Debug, PartialEq)]
+pub enum LedgerError {
+    InsufficientFunds {
+        user_id: UserId,
+        asset: Asset,
+        available: Decimal,
+        requested: Decimal,
+    },
+    AccountFrozen(UserId),
+    AssetNotFound(Asset),
+}
 
 
 // =========== Some More Types ====================

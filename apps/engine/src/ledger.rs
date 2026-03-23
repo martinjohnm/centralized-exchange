@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use rust_decimal::Decimal;
 
-use crate::model::{Asset, UserId};
+use crate::model::{Asset, LedgerError, UserId};
 
 pub struct Ledger {
     // Key : user_id
@@ -26,17 +26,19 @@ impl Ledger {
         account.available += amount
     }
 
-    pub fn withdraw(&mut self, user_id : UserId, asset : Asset, amount : Decimal) -> Result<(), String> {
+    pub fn withdraw(&mut self, user_id : UserId, asset : Asset, amount : Decimal) -> Result<(), LedgerError> {
         let account = self.get_account_mut(user_id, &asset);
 
         if account.available >= amount {
             account.available -= amount;
             Ok(())
         } else {
-            Err(format!(
-            "Withdrawal failed: User {} has insufficient available {} (Requested: {}, Have: {})",
-            user_id, asset, amount, account.available
-        ))
+            Err(LedgerError::InsufficientFunds { 
+                user_id, 
+                asset, 
+                available: account.available, 
+                requested: amount
+            })
         }
     }
 
@@ -53,7 +55,7 @@ impl Ledger {
     // =========== Internal (The hot trading path) ======================
 
     // Move money from available to locked (open order)
-    pub fn lock_funds(&mut self, user_id : UserId, asset: Asset, amount : Decimal) -> Result<(), String> {
+    pub fn lock_funds(&mut self, user_id : UserId, asset: Asset, amount : Decimal) -> Result<(), LedgerError> {
         let account = self.get_account_mut(user_id, &asset);
 
         if account.available >= amount {
@@ -61,7 +63,12 @@ impl Ledger {
             account.locked += amount;
             Ok(())
         } else {
-            Err("Insufficient funds".to_string())
+            Err(LedgerError::InsufficientFunds { 
+                user_id, 
+                asset, 
+                available: account.available, 
+                requested: amount 
+            })
         }
 
 
