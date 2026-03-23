@@ -155,5 +155,89 @@ mod tests {
         assert_eq!(ledger.get_account_mut(user_id, &"USDT".to_string()).available, dec!(50000));
     }
 
+    #[test]
+    fn test_deposit_and_withdraw_flow() {
+        let mut ledger = Ledger::new();
+        let uid = 100;
+        let usdt = "USDT".to_string();
+
+        // 1. Initial Deposit
+        ledger.deposit(uid, usdt.clone(), dec!(1000.50));
+        assert_eq!(ledger.get_account_mut(uid, &usdt).available, dec!(1000.50));
+
+        // 2. Successful Withdrawal
+        let res = ledger.withdraw(uid, usdt.clone(), dec!(500));
+        assert!(res.is_ok());
+        assert_eq!(ledger.get_account_mut(uid, &usdt).available, dec!(500.50));
+
+        // 3. Failed Withdrawal (Insufficient Funds)
+        let res_fail = ledger.withdraw(uid, usdt.clone(), dec!(600));
+        
+        // Asserting on our Custom Enum Data!
+        match res_fail {
+            Err(LedgerError::InsufficientFunds { requested, available, .. }) => {
+                assert_eq!(requested, dec!(600));
+                assert_eq!(available, dec!(500.50));
+            }
+            _ => panic!("Expected InsufficientFunds error"),
+        }
+    }
+
+    #[test]
+    fn test_lock_and_unlock_flow() {
+        let mut ledger = Ledger::new();
+        let uid = 1;
+        let btc = "BTC".to_string();
+
+        ledger.deposit(uid, btc.clone(), dec!(2.0));
+
+        // Lock 1.5 BTC for a limit sell
+        let res = ledger.lock_funds(uid, btc.clone(), dec!(1.5));
+        assert!(res.is_ok());
+
+        {
+            let acc = ledger.get_account_mut(uid, &btc);
+            assert_eq!(acc.available, dec!(0.5));
+            assert_eq!(acc.locked, dec!(1.5));
+        }
+
+        // Unlock 0.5 (e.g., partial cancellation)
+        ledger.unlock_funds(uid, btc.clone(), dec!(0.5));
+        
+        let acc = ledger.get_account_mut(uid, &btc);
+        assert_eq!(acc.available, dec!(1.0));
+        assert_eq!(acc.locked, dec!(1.0));
+    }
+
+    #[test]
+    fn test_atomic_settle_trade() {
+        let mut ledger = Ledger::new();
+        let buyer = 1;
+        let seller = 2;
+        let usdt = "USDT".to_string();
+        let btc = "BTC".to_string();
+
+        // PRE-CONDITION: 
+        // Buyer has 50,000 USDT (Locked for an order)
+        // Seller has 1 BTC (Locked for an order)
+        ledger.deposit(buyer, usdt.clone(), dec!(50000));
+        ledger.lock_funds(buyer, usdt.clone(), dec!(50000)).unwrap();
+        
+        ledger.deposit(seller, btc.clone(), dec!(1));
+        ledger.lock_funds(seller, btc.clone(), dec!(1)).unwrap();
+
+        // EXECUTION: Trade 1 BTC @ 45,000 USDT
+        ledger.settle_trade(buyer, seller, usdt.clone(), btc.clone(), 1, dec!(45000));
+
+        // VERIFY BUYER
+        let b_usdt = ledger.get_account_mut(buyer, &usdt);
+        // They locked 50k, paid 45k. 5k should still be LOCKED (awaiting price improvement refund)
+        assert_eq!(b_usdt.locked, dec!(5000)); 
+        assert_eq!(ledger.get_account_mut(buyer, &btc).available, dec!(1));
+
+        // VERIFY SELLER
+        assert_eq!(ledger.get_account_mut(seller, &usdt).available, dec!(45000));
+        assert_eq!(ledger.get_account_mut(seller, &btc).locked, dec!(0));
+    }
     
 }
