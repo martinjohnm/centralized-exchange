@@ -11,10 +11,41 @@ pub struct Ledger {
 }
 
 impl Ledger {
-    fn new () -> Self {
+    pub fn new () -> Self {
         Self {
             accounts : HashMap::new()
         }
+    }
+
+
+
+    // =========== External (I/O with redis or db) ======================
+
+    pub fn deposite() {
+
+    }
+
+    pub fn withdraw() {
+
+    }
+
+    // Internal helper to get or create an account balance
+    fn get_account_mut() {
+        
+    }
+
+    // =========== Internal (The hot trading path) ======================
+
+    pub fn lock_funds() {
+
+    }
+
+    pub fn unlock_funds() {
+
+    }
+
+    pub fn settle_trade() {
+
     }
 }
 
