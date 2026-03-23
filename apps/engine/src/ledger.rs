@@ -21,34 +21,85 @@ impl Ledger {
 
     // =========== External (I/O with redis or db) ======================
 
-    pub fn deposite() {
-
+    pub fn deposit(&mut self, user_id : UserId, asset : Asset, amount : Decimal) {
+        let account = self.get_account_mut(user_id, &asset);
+        account.available += amount
     }
 
-    pub fn withdraw() {
+    pub fn withdraw(&mut self, user_id : UserId, asset : Asset, amount : Decimal) -> Result<(), String> {
+        let account = self.get_account_mut(user_id, &asset);
 
+        if account.available >= amount {
+            account.available -= amount;
+            Ok(())
+        } else {
+            Err(format!(
+            "Withdrawal failed: User {} has insufficient available {} (Requested: {}, Have: {})",
+            user_id, asset, amount, account.available
+        ))
+        }
     }
 
     // Internal helper to get or create an account balance
-    fn get_account_mut(&mut self, user_id: UserId, asset : Asset) -> &mut Account {
+    fn get_account_mut(&mut self, user_id: UserId, asset : &Asset) -> &mut Account {
         self.accounts
             .entry(user_id)
             .or_insert_with(|| HashMap::new())
-            .entry(asset)
+            .entry(asset.clone())
             .or_insert(Account { available: Decimal::ZERO, locked: Decimal::ZERO })
+        
     }
 
     // =========== Internal (The hot trading path) ======================
 
-    pub fn lock_funds() {
+    // Move money from available to locked (open order)
+    pub fn lock_funds(&mut self, user_id : UserId, asset: Asset, amount : Decimal) -> Result<(), String> {
+        let account = self.get_account_mut(user_id, &asset);
+
+        if account.available >= amount {
+            account.available -= amount;
+            account.locked += amount;
+            Ok(())
+        } else {
+            Err("Insufficient funds".to_string())
+        }
+
 
     }
 
-    pub fn unlock_funds() {
+    pub fn unlock_funds(&mut self, user_id : UserId, asset : Asset, amount : Decimal) {
+        let account = self.get_account_mut(user_id, &asset);
 
+        // assume orderbook validated this amount
+        account.locked -= amount;
+        account.available += amount;
     }
 
-    pub fn settle_trade() {
+    // Moving quote and base togethor
+    pub fn settle_trade(
+        &mut self,
+        buyer : UserId,
+        seller : UserId,
+        quote_asset: Asset, // eg: USDT / INR
+        base_asset: Asset, //  eg: BTC / TATA
+        qty : u64,
+        match_price : Decimal // always the makers price
+    ) {
+        let total_quote = match_price * Decimal::from(qty);
+        let total_base = Decimal::from(qty);
+
+        // ======== Settle the money (Quote asset)
+        // -------- Buyer pays from LOCKED (since they already committed)----
+        self.get_account_mut(buyer, &quote_asset).locked -= total_quote;
+        // -------- Seller receives into AVAILABLE (ready to spent or withdraw)
+        self.get_account_mut(seller, &quote_asset).available += total_quote;
+
+        // ======== Settle the Asset (Base asset) ===
+        // -------- Seller gives from locked (Since their asset was sitting in the book)
+        self.get_account_mut(seller, &base_asset).locked -= total_base;
+        // -------- Buyer receives into AVAILABLE ---------------
+        self.get_account_mut(buyer, &base_asset).available += total_base; 
+
 
     }
 }
@@ -71,7 +122,7 @@ mod tests {
 
         // 1. Accessing a non-existent account should initialize it to zero
         {
-            let account = ledger.get_account_mut(user_id, asset.clone());
+            let account = ledger.get_account_mut(user_id, &asset);
             assert_eq!(account.available, dec!(0));
             assert_eq!(account.locked, dec!(0));
             
@@ -80,7 +131,7 @@ mod tests {
         }
 
         // 2. Accessing it again should return the modified value, not a new zeroed one
-        let account_again = ledger.get_account_mut(user_id, asset);
+        let account_again = ledger.get_account_mut(user_id, &asset);
         assert_eq!(account_again.available, dec!(100));
     }
 
@@ -90,10 +141,12 @@ mod tests {
         let user_id = 1;
 
         // Initialize two different assets for the same user
-        ledger.get_account_mut(user_id, "BTC".to_string()).available = dec!(1);
-        ledger.get_account_mut(user_id, "USDT".to_string()).available = dec!(50000);
+        ledger.get_account_mut(user_id, &"BTC".to_string()).available = dec!(1);
+        ledger.get_account_mut(user_id, &"USDT".to_string()).available = dec!(50000);
 
-        assert_eq!(ledger.get_account_mut(user_id, "BTC".to_string()).available, dec!(1));
-        assert_eq!(ledger.get_account_mut(user_id, "USDT".to_string()).available, dec!(50000));
+        assert_eq!(ledger.get_account_mut(user_id, &"BTC".to_string()).available, dec!(1));
+        assert_eq!(ledger.get_account_mut(user_id, &"USDT".to_string()).available, dec!(50000));
     }
+
+    
 }
