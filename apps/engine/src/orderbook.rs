@@ -10,10 +10,10 @@ use crate::model::{ClientOrderId, EngineOrderId, MatchingError, Order, OrderRequ
 pub struct Orderbook {
 
     // Bids : Sorted descending (Highest price first)
-    pub bids : BTreeMap<Decimal, VecDeque<OrderRequest>>,
+    pub bids : BTreeMap<Decimal, VecDeque<Order>>,
 
     // Asks : Sorted ascending  (Lowest price first)
-    pub asks : BTreeMap<Decimal, VecDeque<OrderRequest>>,
+    pub asks : BTreeMap<Decimal, VecDeque<Order>>,
 
     // Key   : user_id, maping a (userid, cleintId) pair to get the order id in engine for fastlookup while 
     // Value : engine_id, canceling orders by market makers (Only for market making)
@@ -83,13 +83,16 @@ impl Orderbook {
 
     // Get all the vecdequeu array of orders of a price level
     // Which is Option<&mut Vecdeque(Order)> the ref & 
-    fn get_level_mut(&mut self, price: Decimal, side: Side) {
-
+    fn get_level_mut(&mut self, price: Decimal, side: Side) -> Option<&mut VecDeque<Order>> {
+        match side {
+            Side::Buy => self.bids.get_mut(&price),
+            Side::Sell => self.asks.get_mut(&price)
+        }
     }
 
     /// Phase 1: Validates the request and promotes it to a "Real" Order.
     /// This function does NOT change any state.
-    fn validate_and_promote(&mut self, req: OrderRequest) -> std::result::Result<Order, MatchingError> {
+    fn validate_and_promote(&mut self, req: OrderRequest) -> Result<Order, MatchingError> {
         let price = req.price.ok_or(MatchingError::MissingPrice)?;
         let quantity = req.quantity.ok_or(MatchingError::MissingQuantity)?;
         let client_id = req.client_id.ok_or(MatchingError::MissingClientId)?;
@@ -251,5 +254,64 @@ mod tests {
         assert!(ob.client_id_map.is_empty());
         assert!(ob.orders_metadata.is_empty());
         assert!(ob.user_orders.is_empty());
+    }
+
+    #[test]
+    fn test_get_level_mut_and_modify() {
+        let mut ob = Orderbook::new();
+        let price = dec!(50000);
+        let side = Side::Buy;
+
+        // 1. Setup: Manually insert an order into the bids
+        let order = Order {
+            engine_id: 1,
+            price,
+            quantity: dec!(1.0),
+            side,
+            user_id: 42,
+            client_id: 101,
+            timestamp: 0,
+        };
+        
+        let mut queue = VecDeque::new();
+        queue.push_back(order);
+        ob.bids.insert(price, queue);
+
+        // 2. Action: Get the level mutably
+        {
+            let level = ob.get_level_mut(price, side).expect("Level should exist");
+            assert_eq!(level.len(), 1);
+            
+            // Modify it: Pop the order
+            level.pop_front();
+        }
+
+        // 3. Assert: Verify the change persisted in the Orderbook
+        let level_after = ob.bids.get(&price).unwrap();
+        assert!(level_after.is_empty(), "Order should have been removed from the book");
+    }
+
+    #[test]
+    fn test_get_level_mut_missing() {
+        let mut ob = Orderbook::new();
+        
+        // Try to get a price that hasn't been added
+        let result = ob.get_level_mut(dec!(99999), Side::Sell);
+        
+        assert!(result.is_none(), "Should return None for non-existent price level");
+    }
+
+    #[test]
+    fn test_get_level_mut_wrong_side() {
+        let mut ob = Orderbook::new();
+        let price = dec!(100);
+        
+        // Add a BID (Buy)
+        ob.bids.insert(price, VecDeque::new());
+
+        // Try to get a SELL level at that same price
+        let result = ob.get_level_mut(price, Side::Sell);
+        
+        assert!(result.is_none(), "Should not find a Sell level when only a Buy level exists");
     }
 }
