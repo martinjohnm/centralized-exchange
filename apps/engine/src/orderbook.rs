@@ -63,10 +63,47 @@ impl Orderbook {
         Ok(trades)
     }
 
-    fn cancel_order() {
+    // ========= CANCELLATION LOGIC =============
 
+    // =========== OUR MAIN AIM HERE IS TO GET THE engine_id asap =========================
+
+    // cancel using the exact engine_id (the detail get from the user_orders) map
+    // Normal cancellation using the engine_id path (used by retailers)
+    pub fn cancel_by_id(&mut self, engine_id: EngineOrderId) -> Result<Order, OrderError> {
+        // 1. cancel and get it from the fn return value
+        self.execute_cancel(engine_id)
     }
     
+    // fast lane we can cancel an order using the client_id and the user_id composite key 
+    // (user_id, client_id) => engine_id (we get it constant time O(1))
+    pub fn cancel_by_client_id(&mut self, user_id: UserId, client_id: ClientOrderId) -> Result<Order, OrderError> {
+        // 1. get the engine_id from the client_id_map (use the client_id and user_id composite key)
+        let engine_id = self.client_id_map
+            .get(&(user_id, client_id))
+            .copied()
+            .ok_or(OrderError::OrderNotFound)?;
+        // 2. get it from the cancel fn return value and return
+        self.execute_cancel(engine_id)
+    }
+    
+
+    // we get all the engine_id for a particular user from the HASHSET 
+    // user_id => Hashset(engine_id)
+    // for bulk cancellation (Cancelling all orders for a particular user)
+    pub fn cancel_all_for_user(&mut self, user_id: UserId) -> Vec<Order> {
+        let mut cancelled = Vec::new();
+
+        // We must collect IDs first to avoid borrowing 'self' while mutating in the loop
+        if let Some(ids) = self.user_orders.get(&user_id) {
+            let ids_to_remove : Vec<EngineOrderId> = ids.iter().copied().collect();
+            for id in ids_to_remove {
+                if let Ok(order) = self.execute_cancel(id) {
+                    cancelled.push(order);
+                }
+            }
+        }
+        cancelled
+    }
     // == client_id_map helpers ==========
 
 
