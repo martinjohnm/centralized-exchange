@@ -37,7 +37,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let target_ops: f64 = args.get(1)
         .and_then(|s| s.parse().ok())
-        .unwrap_or(100.0);
+        .unwrap_or(10000.0);
 
     let client = redis::Client::open("redis://127.0.0.1:6379").expect("Invalid Redis URL");
     let mut con = client.get_connection().expect("Failed to connect to Redis");
@@ -50,8 +50,8 @@ fn main() {
     let mut last_report = Instant::now();
     let mut last_count = 0;
 
-    println!("🚀 Load Generator Started | Target: {} TPS | Key: {}", target_ops, queue_key);
-    println!("----------------------------------------------------------");
+    // println!("🚀 Load Generator Started | Target: {} TPS | Key: {}", target_ops, queue_key);
+    // println!("----------------------------------------------------------");
 
     loop {
         total_count += 1;
@@ -87,9 +87,9 @@ fn main() {
             let elapsed = now.duration_since(last_report).as_secs_f64();
             let current_tps = (total_count - last_count) as f64 / elapsed;
             
-            print!("\r[Live] Sent: {:<8} | Actual TPS: {:<8.2} | Target: {:.0}", 
-                total_count, current_tps, target_ops
-            );
+            // print!("\r[Live] Sent: {:<8} | Actual TPS: {:<8.2} | Target: {:.0}", 
+            //     total_count, current_tps, target_ops
+            // );
 
         }}
 }

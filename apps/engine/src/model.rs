@@ -1,8 +1,9 @@
 use rust_decimal::Decimal;
+use serde::{Deserialize, Serialize};
 use crate::model::exchange_proto::{ExchangeRequest, exchange_request::Action};
 
 // 1. Order Request struct
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OrderRequest {
     pub user_id : u64,
     pub symbol : String,
@@ -16,7 +17,19 @@ pub struct OrderRequest {
     pub timestamp : u64
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug)]
+// The Internal "Resting" Order
+pub struct Order {
+    pub engine_id: u64,
+    pub client_id : u64,
+    pub user_id: u64,
+    pub price: Decimal,
+    pub quantity: Decimal,
+    pub side: Side,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Deserialize, Serialize)]
 pub enum Side { Buy, Sell }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -95,6 +108,26 @@ pub enum LedgerError {
     AssetNotFound(Asset),
 }
 
+// ======== Out types (eg: Trades, Order_cancelled, Rejected) ==========================
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct Trade {
+    pub maker_id : u64, 
+    pub taker_id : u64,
+    pub price : Decimal,
+    pub quantity : Decimal,
+    pub taker_side : Side,
+    pub maker_side : Side
+}
+
+// =========Matching error ========
+#[derive(Debug, PartialEq, Eq)]
+pub enum MatchingError {
+    MissingPrice,
+    MissingQuantity,
+    MissingClientId,
+    InvalidOrderType,
+    InsufficientFunds, // For when the ledger check fails later
+}
 
 // =========== Some More Types ====================
 pub type UserId = u64;

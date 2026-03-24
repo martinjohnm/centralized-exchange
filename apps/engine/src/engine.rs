@@ -3,9 +3,6 @@ use crate::{model::{ActionType, OrderRequest}, orderbook::Orderbook};
 
 pub struct Engine {
     symbol: String,
-    // engine_id (strictly increasing)
-    current_engine_id : u64, // It has a helper to create next engine_id
-
     pub orderbook : Orderbook
 }
 
@@ -13,7 +10,6 @@ impl Engine {
     pub fn new(symbol: String) -> Self {
         Self { 
             symbol,
-            current_engine_id : 1, // start at zero
             orderbook : Orderbook::new()
         }
     }
@@ -37,11 +33,11 @@ impl Engine {
     }
 
     // -----------Request handlers --------------------------
-    fn handle_create(&mut self, _order: OrderRequest) {
+    fn handle_create(&mut self, req: OrderRequest) {
         // Logic for adding to BTreeMap Orderbook goes here
         // 1. add to the client_id_engine_id map
         // 2. add to the order_users map
-        
+        self.orderbook.match_or_rest(req);
     }
 
     fn handle_cancel(&mut self, _order: OrderRequest) {
@@ -57,13 +53,6 @@ impl Engine {
     }
 
 
-    // ------------Helpers--------------------------------
-    // 1.0 ====== Helper to create next_engine_id========
-    fn next_engine_id(&mut self) -> u64 {
-        let next_engine_id = self.current_engine_id;
-        self.current_engine_id += 1;
-        next_engine_id
-    }
 
 
 
