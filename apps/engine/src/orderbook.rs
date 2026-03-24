@@ -161,7 +161,7 @@ impl Orderbook {
         // entry() is highly efficient for BTreemap
         target_map
             .entry(price)
-            .or_insert_with( VecDeque::new())
+            .or_insert_with( || VecDeque::new()) // This or_insert_with is LAZY (only calls if it is empty) but or_insert viceversa
             .push_back(order);
     }
 
@@ -169,7 +169,7 @@ impl Orderbook {
     // retil orders cancellation , market makers cancellation (with client_id) or 
     // retailers bulk cancellation with user_id
 
-    fn execute_cancel(&mut self, engine_id: EngineOrderId) -> Result<Order, MatchingError> {
+    fn execute_cancel(&mut self, engine_id: EngineOrderId) -> Result<Order, OrderError> {
         // 1. get the metadata (from orders_metadata)
         let (price, side) = self.orders_metadata.get(&engine_id)
             .copied()
@@ -193,7 +193,7 @@ impl Orderbook {
         };
 
         // 5. Remove indexes from all hashmaps
-        self.remove_indexes(engine_id, user_id, client_id);
+        self.remove_indexes(removed_order.engine_id, removed_order.user_id, removed_order.client_id);
 
         Ok(removed_order)
     } 
