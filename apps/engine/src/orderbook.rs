@@ -407,5 +407,103 @@ mod tests {
 
 
     // The Cancel logic unit tests 
-    
+    // Helper to bootstrap an orderbook with a resting order
+    fn setup_with_order(engine_id: u64, user_id: u64, client_id: u64) -> Orderbook {
+        let mut ob = Orderbook::new();
+        let order = Order {
+            engine_id,
+            user_id,
+            client_id,
+            price: dec!(50000),
+            quantity: dec!(1.0),
+            side: Side::Buy,
+            timestamp: 123456789,
+        };
+        // Setup state manually to isolate cancellation logic
+        ob.add_to_indexes(&order);
+        ob.rest_in_book(order);
+        ob
+    }
+
+    #[test]
+    fn test_cancel_by_id_retail_path() {
+        let (e_id, u_id, c_id) = (1001, 1, 55);
+        let mut ob = setup_with_order(e_id, u_id, c_id);
+
+        // Act: Direct internal ID cancel
+        let result = ob.cancel_by_id(e_id);
+
+        // Assert: Order is returned and maps are clean
+        assert!(result.is_ok());
+        let cancelled = result.unwrap();
+        assert_eq!(cancelled.engine_id, e_id);
+        
+        // Final state check
+        assert!(ob.orders_metadata.get(&e_id).is_none());
+        assert!(ob.client_id_map.get(&(u_id, c_id)).is_none());
+        assert!(ob.bids.is_empty());
+    }
+
+    #[test]
+    fn test_cancel_by_client_id_mm_path() {
+        let (e_id, u_id, c_id) = (2002, 7, 999);
+        let mut ob = setup_with_order(e_id, u_id, c_id);
+
+        // Act: Market Maker style cancel (User + Client ID)
+        let result = ob.cancel_by_client_id(u_id, c_id);
+
+        // Assert
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().engine_id, e_id);
+        
+        // Ensure index resolution is broken
+        assert!(!ob.client_id_map.contains_key(&(u_id, c_id)));
+    }
+
+    #[test]
+    fn test_bulk_cancel_all_for_user() {
+        let mut ob = Orderbook::new();
+        let user_id = 42;
+        let common_price = dec!(50000); // All orders at the same price
+        // 1. Setup: Give user 42 three different orders at different prices
+        for i in 1..=3 {
+            let order = Order {
+                engine_id: i as u64,
+                user_id,
+                client_id: 100 + i as u64,
+                price: common_price,
+                quantity: dec!(0.5),
+                side: Side::Buy,
+                timestamp: 0,
+            };
+            ob.add_to_indexes(&order);
+            ob.rest_in_book(order);
+        }
+
+        // 2. Act: Nuclear option (Cancel All)
+        let cancelled_orders = ob.cancel_all_for_user(user_id);
+
+        // 3. Assert
+        assert_eq!(cancelled_orders.len(), 3);
+        
+        // Verify user metadata is nuked
+        assert!(ob.user_orders.get(&user_id).is_none());
+        // Verify book is empty
+        assert!(ob.bids.is_empty());
+        // Verify cross-reference maps are empty
+        assert!(ob.client_id_map.is_empty());
+        assert!(ob.orders_metadata.is_empty());
+    }
+
+    #[test]
+    fn test_cancel_order_not_found_scenarios() {
+        let mut ob = Orderbook::new();
+        
+        // Try to cancel non-existent engine_id
+        assert!(matches!(ob.cancel_by_id(999), Err(OrderError::OrderNotFound)));
+        
+        // Try to cancel non-existent client_id combo
+        assert!(matches!(ob.cancel_by_client_id(1, 123), Err(OrderError::OrderNotFound)));
+        assert!(ob.cancel_all_for_user(1).is_empty());
+    }
 }
