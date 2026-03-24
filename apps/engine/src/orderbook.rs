@@ -144,21 +144,22 @@ mod tests {
     }
 
     #[test]
-    // fn test_validation_errors() {
-    //     let mut ob = Orderbook::new();
+    fn test_validation_errors() {
+        let mut ob = Orderbook::new();
 
-    //     // Test Missing Price
-    //     let req_no_price = mock_request(101, None, Some(dec!(1.0)));
-    //     let result = ob.validate_and_promote(req_no_price);
+        // 1. Test Missing Price
+        let req = mock_request(101, None, Some(dec!(1.0)));
+        let result = ob.validate_and_promote(req);
+        
+        // Check for specific error pattern
+        assert!(matches!(result, Err(MatchingError::MissingPrice)));
 
-    //     // Explicitly use std::result::Result::Err to avoid "Archived" conflicts
-    //     assert_eq!(result, std::result::Result::Err(MatchingError::MissingPrice));
-
-    //     // Test Missing Quantity
-    //     let req_no_qty = mock_request(102, Some(dec!(50000)), None);
-    //     let result_qty = ob.validate_and_promote(req_no_qty);
-    //     assert_eq!(result_qty, std::result::Result::Err(MatchingError::MissingQuantity));
-    // }
+        // 2. Test Missing Quantity
+        let req_qty = mock_request(102, Some(dec!(50000)), None);
+        let result_qty = ob.validate_and_promote(req_qty);
+        
+        assert!(matches!(result_qty, Err(MatchingError::MissingQuantity)));
+    }
     #[test]
     fn test_promotion_and_id_generation() {
         let mut ob = Orderbook::new();
