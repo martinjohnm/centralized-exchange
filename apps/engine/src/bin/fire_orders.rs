@@ -37,7 +37,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let target_ops: f64 = args.get(1)
         .and_then(|s| s.parse().ok())
-        .unwrap_or(10000.0);
+        .unwrap_or(100000.0);
 
     let client = redis::Client::open("redis://127.0.0.1:6379").expect("Invalid Redis URL");
     let mut con = client.get_connection().expect("Failed to connect to Redis");

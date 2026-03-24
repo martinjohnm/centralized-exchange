@@ -104,11 +104,8 @@ impl Orderbook {
         }
         cancelled
     }
-    // == client_id_map helpers ==========
-
-
-    // == user_orders_helpers  ===========
-
+   
+    // -============================================ HELPERS ==============================================================
     // 1. Fn to get the best bid
     fn best_bid(&self) -> Option<Decimal> {
         self.bids.keys().next_back().cloned()
@@ -124,6 +121,14 @@ impl Orderbook {
         match side {
             Side::Buy => self.bids.get_mut(&price),
             Side::Sell => self.asks.get_mut(&price)
+        }
+    }
+
+    // is match possible checker ??===================
+    fn is_match(&self, taker_price: Decimal, best_price: Decimal, side: Side) -> bool {
+        match side {
+            Side::Sell  => taker_price <= best_price,
+            Side::Buy   => taker_price >= best_price
         }
     }
 
@@ -239,6 +244,7 @@ impl Orderbook {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rust_decimal::prelude::FromPrimitive;
     use rust_decimal_macros::dec;
     use crate::model::{Side, OrderType, ActionType};
 
@@ -505,5 +511,25 @@ mod tests {
         // Try to cancel non-existent client_id combo
         assert!(matches!(ob.cancel_by_client_id(1, 123), Err(OrderError::OrderNotFound)));
         assert!(ob.cancel_all_for_user(1).is_empty());
+    }
+
+    fn test_is_match () {
+
+        let ob = Orderbook::new();
+
+        let mut best_price = Decimal::from_i32(120).unwrap();
+        let mut taker_price = Decimal::from_i32(100).unwrap();
+
+        assert_eq!(ob.is_match(taker_price, best_price, Side::Buy), false);
+        taker_price = Decimal::from_i32(90).unwrap();
+        best_price = Decimal::from_i32(89).unwrap();
+        assert_eq!(ob.is_match(taker_price, best_price, Side::Sell), false);
+
+        taker_price = Decimal::from_i32(100).unwrap();
+        best_price = Decimal::from_i32(101).unwrap();
+        assert_eq!(ob.is_match(taker_price, best_price, Side::Sell), true);
+        taker_price = Decimal::from_i32(100).unwrap();
+        best_price = Decimal::from_i32(91).unwrap();
+        assert_eq!(ob.is_match(taker_price, best_price, Side::Buy), true);
     }
 }
