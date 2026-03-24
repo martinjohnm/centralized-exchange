@@ -120,6 +120,27 @@ impl Orderbook {
             .or_default()
             .insert(order.engine_id);
     }
+
+    /// Phase 3: Removes all traces of an order from secondary indexes.
+    /// Call this when an order is Fully Filled or Cancelled.
+    fn remove_indexes(&mut self, engine_id: u64, user_id: u64, client_id: u64) {
+        // 1. Remove from Client ID Map
+        self.client_id_map.remove(&(user_id, client_id));
+
+        // 2. Remove from Metadata Map (The Price/Side GPS)
+        self.orders_metadata.remove(&engine_id);
+
+        // 3. Remove from User's active order set
+        if let Some(user_set) = self.user_orders.get_mut(&user_id) {
+            user_set.remove(&engine_id);
+            
+            // Cleanup: If the user has no more active orders, 
+            // remove the HashSet entirely to save memory.
+            if user_set.is_empty() {
+                self.user_orders.remove(&user_id);
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -205,5 +226,30 @@ mod tests {
         // 3. Verify User Orders Set
         let user_set = ob.user_orders.get(&user_id).unwrap();
         assert!(user_set.contains(&55));
+    }
+    #[test]
+    fn test_remove_indexes() {
+        let mut ob = Orderbook::new();
+        let (u_id, c_id, e_id) = (1, 101, 55);
+        
+        // Setup: Add an order first
+        let order = Order {
+            engine_id: e_id,
+            client_id: c_id,
+            user_id: u_id,
+            price: dec!(100),
+            quantity: dec!(1),
+            side: Side::Buy,
+            timestamp: 0,
+        };
+        ob.add_to_indexes(&order);
+
+        // Action: Remove it
+        ob.remove_indexes(e_id, u_id, c_id);
+
+        // Assert: Maps should be empty
+        assert!(ob.client_id_map.is_empty());
+        assert!(ob.orders_metadata.is_empty());
+        assert!(ob.user_orders.is_empty());
     }
 }
