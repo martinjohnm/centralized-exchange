@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 
 use rust_decimal::Decimal;
 
-use crate::model::{ClientOrderId, EngineOrderId, MatchingError, Order, OrderRequest, Side, Trade, UserId};
+use crate::model::{ClientOrderId, EngineOrderId, MatchingError, Order, OrderError, OrderRequest, Side, Trade, UserId};
 
 
 
@@ -144,6 +144,59 @@ impl Orderbook {
             }
         }
     }
+
+    /// Phase 4. Inserts the order into the actual BTreemap
+    /// This should be called After match_or_rest has finished its matching
+    fn rest_in_book(&mut self, order: Order) {
+        let price = order.price;
+        let side = order.side;
+
+        // 1. Get the side-specific map
+        let target_map = match side {
+            Side::Buy => &mut self.bids,
+            Side::Sell => &mut  self.asks
+        };
+
+        // 2. Find the price level or create a new one 
+        // entry() is highly efficient for BTreemap
+        target_map
+            .entry(price)
+            .or_insert_with( VecDeque::new())
+            .push_back(order);
+    }
+
+    // Cancel helper fn with the engine_id which can be called either by 
+    // retil orders cancellation , market makers cancellation (with client_id) or 
+    // retailers bulk cancellation with user_id
+
+    fn execute_cancel(&mut self, engine_id: EngineOrderId) -> Result<Order, MatchingError> {
+        // 1. get the metadata (from orders_metadata)
+        let (price, side) = self.orders_metadata.get(&engine_id)
+            .copied()
+            .ok_or(OrderError::OrderNotFound)?;
+
+        // 2. get the Price level VecDeque
+        let level = self.get_level_mut(price, side)
+            .ok_or(OrderError::OrderNotFound)?;
+
+        // 3. Remove from the VecDeque (Time Priority remains)
+        let pos = level.iter().position(|o| o.engine_id == engine_id)
+            .ok_or(OrderError::OrderNotFound)?;
+        let removed_order = level.remove(pos)
+            .ok_or(OrderError::OrderNotFound)?;
+        // 4. Cleanup BTreemap if level is empty
+        if level.is_empty() {
+            match side {
+                Side::Buy => self.bids.remove(&price),
+                Side::Sell => self.asks.remove(&price)
+            };
+        };
+
+        // 5. Remove indexes from all hashmaps
+        self.remove_indexes(engine_id, user_id, client_id);
+
+        Ok(removed_order)
+    } 
 }
 
 #[cfg(test)]
@@ -314,4 +367,8 @@ mod tests {
         
         assert!(result.is_none(), "Should not find a Sell level when only a Buy level exists");
     }
+
+
+    // The Cancel logic unit tests 
+    
 }

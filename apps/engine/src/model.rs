@@ -129,6 +129,11 @@ pub enum MatchingError {
     InsufficientFunds, // For when the ledger check fails later
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum OrderError {
+    OrderNotFound
+}
+
 // =========== Some More Types ====================
 pub type UserId = u64;
 pub type ClientOrderId = u64;
