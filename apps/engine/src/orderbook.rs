@@ -56,6 +56,7 @@ impl Orderbook {
         let mut taker_order = self.validate_and_promote(req)?;
         let mut trades: Vec<Trade> = Vec::new();
         
+        let mut orders_to_scrub: Vec<(EngineOrderId, UserId, ClientOrderId)> = Vec::new();
         // 2). ------------------------- MATCHING LOGIC ---------------------------------- 
         while taker_order.quantity > dec!(0) {
             /// 1. Look for the best price in the oppostie side
@@ -78,12 +79,21 @@ impl Orderbook {
                         if let Some(orders) = self.get_level_mut(price, side_to_match) {
                             while taker_order.quantity > dec!(0) && !orders.is_empty() {
                                 // mut borrow of the order from the front (oldest order first)
+                                // IMPORTANT : THIS WILL CLEAR THIS maker_order IF IT IS NOT PUSHED BACK TO THE LEVEL
                                 let mut maker_order = orders.pop_front().unwrap();
 
+                                // 1. ===============PRE MATCH ======================================================
                                 // ========= self trade prevention =================
+                                // used user_id here to know if they are same user (this creates fake volume)
+                                
+                                if taker_order.user_id == maker_order.user_id {
+                                    // remove the indexes and we remove from the orders (By never pushing back)
+                               
+                                    self.remove_indexes(maker_order.engine_id, maker_order.user_id, maker_order.client_id);
+                                    continue;
+                                }
 
-
-                                // ========= proceed from here if not self trade ============
+                                // 2. ===============MATCH======================================================
 
                                 // --------- The Match how much can we actully trade?--------
                                 let match_quantity = taker_order.quantity.min(maker_order.quantity);
@@ -100,6 +110,14 @@ impl Orderbook {
                                     maker_side: maker_order.side 
                                 });
 
+                                // 3. =============== POST MATCH ===============================================
+                                if maker_order.quantity > dec!(0) {
+                                    // Partial fill: Maker keeps their priority at the FRONT
+                                    orders.push_front(maker_order);
+                                } else {
+                                    // Full fill: Maker is finished, clean up their indexes
+                                    self.remove_indexes(maker_order.engine_id, maker_order.user_id, maker_order.client_id);
+                                }
 
                             }
                         }
