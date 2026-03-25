@@ -777,4 +777,46 @@ mod tests {
         assert_eq!(trades[1].price, dec!(101));
         assert!(ob.asks.is_empty(), "Book should be cleared after sweep");
     }
+
+    // 4. Self trade prevention 
+
+    #[test]
+    fn test_self_trade_prevention() {
+        let mut ob = Orderbook::new();
+
+        let user_id = 42;
+
+        // User 42: Sell 1.0 at @50
+        ob.match_or_rest(OrderRequest {
+            user_id: 42,
+            client_id: Some(101),
+            price: Some(dec!(50)),
+            quantity: Some(dec!(1.0)),
+            side: Side::Sell,
+            symbol : "BTC_USDT".to_string(),
+            order_type: OrderType::Limit,
+            action: ActionType::Create,
+            engine_id : None,
+            timestamp : 123456789
+        }).unwrap();
+
+        // User 42: Buy 1.0  @50 (self trade prevention should happen)
+        let trades = ob.match_or_rest(OrderRequest {
+            user_id: 42,
+            client_id: Some(101),
+            price: Some(dec!(50)),
+            quantity: Some(dec!(1.0)),
+            side: Side::Buy,
+            symbol : "BTC_USDT".to_string(),
+            order_type: OrderType::Limit,
+            action: ActionType::Create,
+            engine_id : None,
+            timestamp : 123456789
+        }).unwrap();
+
+        assert_eq!(trades.len(), 0, "No trade should happen on self-trade");
+        assert!(ob.asks.is_empty(), "Maker should have been cancelled");
+        assert!(ob.bids.contains_key(&dec!(50)), "Taker should have rested in the book as Bid");
+    }
+
 }
