@@ -725,5 +725,56 @@ mod tests {
         assert_eq!(ob.orders_metadata.len(), 1, "Only one maker should remain in metadata")
     }
 
-    
+    #[test]
+    fn test_walking_the_book() {
+        let mut ob = Orderbook::new();
+
+        // Add two sell levels
+        // 1. Maker: sell 1.0 BTC @100
+        ob.match_or_rest(OrderRequest {
+            user_id: 1,
+            client_id: Some(101),
+            price: Some(dec!(100)),
+            quantity: Some(dec!(1.0)),
+            side: Side::Sell,
+            symbol : "BTC_USDT".to_string(),
+            order_type: OrderType::Limit,
+            action: ActionType::Create,
+            engine_id : None,
+            timestamp : 123456789
+        }).unwrap();
+
+        // 2. Taker: sell 1.0 BTC @101
+        ob.match_or_rest(OrderRequest {
+            user_id: 1,
+            client_id: Some(202),
+            price: Some(dec!(101)),
+            quantity: Some(dec!(1.0)),
+            side: Side::Sell,
+            symbol : "BTC_USDT".to_string(),
+            order_type: OrderType::Limit,
+            action: ActionType::Create,
+            engine_id : None,
+            timestamp : 123456789
+        }).unwrap();
+
+        // Taker : Buy 2.0 @ 101 (Should eat both)
+        let trades = ob.match_or_rest(OrderRequest {
+            user_id: 2,
+            client_id: Some(202),
+            price: Some(dec!(101)),
+            quantity: Some(dec!(2.0)),
+            side: Side::Buy,
+            symbol : "BTC_USDT".to_string(),
+            order_type: OrderType::Limit,
+            action: ActionType::Create,
+            engine_id : None,
+            timestamp : 123456789
+        }).unwrap();
+
+        assert_eq!(trades.len(), 2);
+        assert_eq!(trades[0].price, dec!(100));
+        assert_eq!(trades[1].price, dec!(101));
+        assert!(ob.asks.is_empty(), "Book should be cleared after sweep");
+    }
 }
