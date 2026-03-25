@@ -131,6 +131,8 @@ impl Orderbook {
                     // --- SCOPE END: ----- 'self.get_level_mut mutable borrow ends here --------------
 
                     // Now safely borrow the 'self' again
+                    // here we used drain fn (it available on collection like Vec, Hashmap, VecDeque) remove a range 
+                    // of elements from a collection while yielding them in an iterator
                     for (eid, uid, cid) in orders_to_scrub.drain(..) {
                         // self.remove_indexes is a mutbale borrow to orderbook
                         self.remove_indexes(eid, uid, cid);
