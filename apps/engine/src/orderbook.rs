@@ -133,6 +133,7 @@ impl Orderbook {
                     // Now safely borrow the 'self' again
                     // here we used drain fn (it available on collection like Vec, Hashmap, VecDeque) remove a range 
                     // of elements from a collection while yielding them in an iterator
+                    // after drain the vector is empty but the capacity is kept
                     for (eid, uid, cid) in orders_to_scrub.drain(..) {
                         // self.remove_indexes is a mutbale borrow to orderbook
                         self.remove_indexes(eid, uid, cid);
