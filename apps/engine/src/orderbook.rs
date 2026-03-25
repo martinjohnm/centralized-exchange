@@ -88,8 +88,11 @@ impl Orderbook {
                                 
                                 if taker_order.user_id == maker_order.user_id {
                                     // remove the indexes and we remove from the orders (By never pushing back)
-                               
-                                    self.remove_indexes(maker_order.engine_id, maker_order.user_id, maker_order.client_id);
+                                    // we cannot call the remove_indexes here because we have called the 
+                                    // mutable borrow of the orderbook object (self) on the if let block 
+                                    // this remove_indexes call mutbale borrow again violate rust ownership rules
+                                    // self.remove_indexes(maker_order.engine_id, maker_order.user_id, maker_order.client_id);
+                                    orders_to_scrub.push((maker_order.engine_id, maker_order.user_id, maker_order.client_id));
                                     continue;
                                 }
 
@@ -116,10 +119,30 @@ impl Orderbook {
                                     orders.push_front(maker_order);
                                 } else {
                                     // Full fill: Maker is finished, clean up their indexes
-                                    self.remove_indexes(maker_order.engine_id, maker_order.user_id, maker_order.client_id);
+                                    // again here we cannot call the mutable borrow
+                                    orders_to_scrub.push((maker_order.engine_id, maker_order.user_id, maker_order.client_id));
+                                    // self.remove_indexes(maker_order.engine_id, maker_order.user_id, maker_order.client_id);
                                 }
 
                             }
+                        }
+                    }
+
+                    // --- SCOPE END: ----- 'self.get_level_mut mutable borrow ends here --------------
+
+                    // Now safely borrow the 'self' again
+                    for (eid, uid, cid) in orders_to_scrub {
+                        // self.remove_indexes is a mutbale borrow to orderbook
+                        self.remove_indexes(eid, uid, cid);
+                    }
+
+                    // Clean up empty price level
+                    if let Some(level) = self.get_level_mut(price, side_to_match) {
+                        if level.is_empty() {
+                            match side_to_match {
+                                Side::Buy => self.bids.remove(&price),
+                                Side::Sell => self.asks.remove(&price)
+                            };
                         }
                     }
 
