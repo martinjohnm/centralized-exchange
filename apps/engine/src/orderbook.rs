@@ -131,7 +131,7 @@ impl Orderbook {
                     // --- SCOPE END: ----- 'self.get_level_mut mutable borrow ends here --------------
 
                     // Now safely borrow the 'self' again
-                    for (eid, uid, cid) in orders_to_scrub {
+                    for (eid, uid, cid) in orders_to_scrub.drain(..) {
                         // self.remove_indexes is a mutbale borrow to orderbook
                         self.remove_indexes(eid, uid, cid);
                     }
