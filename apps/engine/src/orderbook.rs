@@ -84,9 +84,28 @@ impl Orderbook {
 
 
                                 // ========= proceed from here if not self trade ============
+
+                                // --------- The Match how much can we actully trade?--------
+                                let match_quantity = taker_order.quantity.min(maker_order.quantity);
+
+                                taker_order.quantity -= match_quantity;
+                                maker_order.quantity -= match_quantity;
+
+                                trades.push(Trade { 
+                                    maker_id: maker_order.engine_id, 
+                                    taker_id: taker_order.engine_id, 
+                                    price, 
+                                    quantity: match_quantity, 
+                                    taker_side: taker_order.side, 
+                                    maker_side: maker_order.side 
+                                });
+
+
                             }
                         }
                     }
+
+                    
                 }
                 _ => {
                     /// ========IMPORTANT LOOP BREAKING LOGIC=================
