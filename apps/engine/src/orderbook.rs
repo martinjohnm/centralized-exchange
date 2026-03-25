@@ -717,7 +717,13 @@ mod tests {
             timestamp : 123456789
         }).unwrap();
 
-        assert_eq!(trades[0].quantity, dec!(2.0))
+        assert_eq!(trades[0].quantity, dec!(2.0));
 
+        // Check the remaining maker quantity
+        let level = ob.asks.get(&dec!(50000)).unwrap();
+        assert_eq!(level.front().unwrap().quantity, dec!(8.0));
+        assert_eq!(ob.orders_metadata.len(), 1, "Only one maker should remain in metadata")
     }
+
+    
 }
