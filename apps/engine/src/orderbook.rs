@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 
 use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 
 use crate::model::{ClientOrderId, EngineOrderId, MatchingError, Order, OrderError, OrderRequest, Side, Trade, UserId};
 
@@ -50,16 +51,61 @@ impl Orderbook {
     pub fn match_or_rest(&mut self, req: OrderRequest) -> Result<Vec<Trade>, MatchingError> {
 
 
-        // --- VALIDATION ---
+        // 1). ------------------------- VALIDATION AND PROMOTION ------------------------------
         // If validation fails, it exits here with the Err.
         let mut taker_order = self.validate_and_promote(req)?;
-
-        self.add_to_indexes(&taker_order);
-
+        let mut trades: Vec<Trade> = Vec::new();
         
-        // matching logic later
+        // 2). ------------------------- MATCHING LOGIC ---------------------------------- 
+        while taker_order.quantity > dec!(0) {
+            /// 1. Look for the best price in the oppostie side
+            let best_price = match taker_order.side {
+                Side::Buy => self.best_ask(), // Buyer should look at best asks 
+                Side::Sell => self.best_bid() // Seller should look at the best bids
+            };
 
-        let trades: Vec<Trade> = Vec::new();
+            /// 2. Check if the best price "crosses the spread"
+            match best_price {
+                Some(price) if self.is_match(taker_order.price, price, taker_order.side) => {
+                    
+                    let side_to_match = match taker_order.side {
+                        Side::Buy => Side::Sell,
+                        Side::Sell => Side::Buy
+                    };
+
+                    // Matching scope (scoped borrow for maker order in the BTreemap (&mut VecDeque<Order>))
+                    {
+                        if let Some(orders) = self.get_level_mut(price, side_to_match) {
+                            while taker_order.quantity > dec!(0) && !orders.is_empty() {
+                                // mut borrow of the order from the front (oldest order first)
+                                let mut maker_order = orders.pop_front().unwrap();
+
+                                // ========= self trade prevention =================
+
+
+                                // ========= proceed from here if not self trade ============
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    /// ========IMPORTANT LOOP BREAKING LOGIC=================
+                    /// No match possible: (Never add taker_order here because what if the taker
+                    /// quantity is 0 it should create a zero voulme order!!).
+                    /// Loop will break with the taker order with quantity (which may or may not be zero)
+                    break;
+                }
+            }
+        }
+
+        // 3). -------------- THE FINAL STEP ---------------------------------------
+        // if quantity remains its now a "Maker"
+        if taker_order.quantity > dec!(0) {
+            // Only now do we add it to the maps and book
+            self.add_to_indexes(&taker_order);
+            self.rest_in_book(taker_order);
+        }
+
         Ok(trades)
     }
 
