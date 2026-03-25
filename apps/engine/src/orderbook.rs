@@ -642,6 +642,8 @@ mod tests {
         assert_eq!(ob.is_match(taker_price, best_price, Side::Buy), true);
     }
 
+    // ============== THESE ARE THE MOST IMPORTANT TESTS !!!!!!! ================================
+    // 1. Test for full fill 
     #[test]
     fn test_match_full_fill() {
         let mut ob = Orderbook::new();
@@ -659,7 +661,7 @@ mod tests {
             engine_id : None,
             timestamp : 123456789
         }).unwrap();
-        
+
         // 2. Taker: Buy 1.0 BTC @50,000
         let trades = ob.match_or_rest(OrderRequest {
             user_id: 2,
@@ -681,5 +683,41 @@ mod tests {
         assert!(ob.orders_metadata.is_empty(), "Metadata should be deleted after full fill");
         assert!(ob.client_id_map.is_empty(), "Client_map should be deleted after full fill");
         assert!(ob.user_orders.is_empty(), "user_orders map should be empty after full fill");
+    }
+
+    // 2. Test for partial fill (Maker priority)
+    #[test]
+    fn test_partial_fill_priority() {
+        let mut ob = Orderbook::new();
+        // 1. Maker: sell 10.0 BTC @50,000
+        ob.match_or_rest(OrderRequest {
+            user_id: 1,
+            client_id: Some(101),
+            price: Some(dec!(50000)),
+            quantity: Some(dec!(10.0)),
+            side: Side::Sell,
+            symbol : "BTC_USDT".to_string(),
+            order_type: OrderType::Limit,
+            action: ActionType::Create,
+            engine_id : None,
+            timestamp : 123456789
+        }).unwrap();
+
+        // 2. Taker: Buy 2.0 BTC @50,000
+        let trades = ob.match_or_rest(OrderRequest {
+            user_id: 2,
+            client_id: Some(202),
+            price: Some(dec!(50000)),
+            quantity: Some(dec!(2.0)),
+            side: Side::Buy,
+            symbol : "BTC_USDT".to_string(),
+            order_type: OrderType::Limit,
+            action: ActionType::Create,
+            engine_id : None,
+            timestamp : 123456789
+        }).unwrap();
+
+        assert_eq!(trades[0].quantity, dec!(2.0))
+
     }
 }
