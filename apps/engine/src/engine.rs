@@ -41,15 +41,19 @@ impl Engine {
         let trades = self.orderbook.match_or_rest(req);
         match trades {
             Ok(trades) => {
-                println!("{:?}", trades);
+                for trade in trades {
+                    // unlock the makers (who sat in the orderbook ) fund
+
+                }
             },
             Err(e) => {
 
             }
         }
-        // 3. broadcast the events of the result
+        // 3. Unlock the takers funds 
+        
+        // 4. broadcast the events of the result
 
-        // 4. Unlock the balance 
     }
 
     fn handle_cancel(&mut self, _order: OrderRequest) {
