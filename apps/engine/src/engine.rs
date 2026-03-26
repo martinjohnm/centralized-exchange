@@ -40,7 +40,7 @@ impl Engine {
         // 2. Match fully or rest remaining
         let trades = self.orderbook.match_or_rest(req);
         match trades {
-            Ok(t) => {
+            Ok(trades) => {
                 println!("{:?}", trades);
             },
             Err(e) => {
