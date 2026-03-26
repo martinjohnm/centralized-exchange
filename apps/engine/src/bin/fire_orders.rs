@@ -37,7 +37,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let target_ops: f64 = args.get(1)
         .and_then(|s| s.parse().ok())
-        .unwrap_or(100000.0);
+        .unwrap_or(10000.0);
 
     let client = redis::Client::open("redis://127.0.0.1:6379").expect("Invalid Redis URL");
     let mut con = client.get_connection().expect("Failed to connect to Redis");
@@ -61,20 +61,7 @@ fn main() {
         throttler.wait(total_count);
 
         // 2. Generate Protobuf Message
-        let request = exchange_proto::ExchangeRequest {
-            user_id: (total_count % 500) as u64,
-            timestamp: 1711000000 + total_count,
-            action: Some(exchange_proto::exchange_request::Action::Create(
-                exchange_proto::CreateOrder {
-                    symbol: "BTC_USDT".to_string(),
-                    side: if total_count % 2 == 0 { 0 } else { 1 },
-                    price: "65000.00".to_string(),
-                    quantity: "0.05".to_string(),
-                    order_type: 0,
-                    client_id: total_count,
-                }
-            )),
-        };
+        let request = generate_random_order(2);
 
         // 3. Serialize and Push
         let mut buf = Vec::with_capacity(request.encoded_len());
@@ -92,4 +79,40 @@ fn main() {
             // );
 
         }}
+}
+
+
+use rand::Rng;
+
+fn generate_random_order(total_count: u64) -> exchange_proto::ExchangeRequest {
+    let mut rng = rand::thread_rng();
+
+    // 1. Randomize the Side (50/50 chance)
+    let is_buy = rng.gen_bool(0.5);
+    let side = if is_buy { 0 } else { 1 };
+
+    // 2. Randomize the Price (Random Walk around 65,000)
+    // We add/subtract up to $100 from the base price
+    let offset: f64 = rng.gen_range(-100.0..100.0);
+    let price_val = 65000.0 + offset;
+    let price_str = format!("{:.2}", price_val);
+
+    // 3. Randomize Quantity (0.01 to 0.50)
+    let qty_val: u64 = rng.gen_range(1..101); 
+    let qty_str = qty_val.to_string(); // Simple string conversion
+
+    exchange_proto::ExchangeRequest {
+        user_id: (rng.gen_range(1..500)) as u64, // Random user from a pool of 500
+        timestamp: 123456,
+        action: Some(exchange_proto::exchange_request::Action::Create(
+            exchange_proto::CreateOrder {
+                symbol: "BTC_USDT".to_string(),
+                side,
+                price: price_str,
+                quantity: qty_str,
+                order_type: 0, // Limit Order
+                client_id: total_count,
+            }
+        )),
+    }
 }

@@ -1,16 +1,18 @@
 
-use crate::{model::{ActionType, OrderRequest}, orderbook::Orderbook};
+use crate::{ledger::Ledger, model::{ActionType, OrderRequest}, orderbook::Orderbook};
 
 pub struct Engine {
     symbol: String,
-    pub orderbook : Orderbook
+    pub orderbook : Orderbook,
+    pub ledger : Ledger,
 }
 
 impl Engine {
     pub fn new(symbol: String) -> Self {
         Self { 
             symbol,
-            orderbook : Orderbook::new()
+            orderbook : Orderbook::new(),
+            ledger : Ledger::new()
         }
     }
 
@@ -37,7 +39,16 @@ impl Engine {
         // Logic for adding to BTreeMap Orderbook goes here
         // 1. add to the client_id_engine_id map
         // 2. add to the order_users map
-        self.orderbook.match_or_rest(req);
+        
+        let t = self.orderbook.match_or_rest(req);
+        match t {
+            Ok(t) => {
+                println!("{:?}", t);
+            },
+            Err(e) => {
+
+            }
+        }
     }
 
     fn handle_cancel(&mut self, _order: OrderRequest) {
