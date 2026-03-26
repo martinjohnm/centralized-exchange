@@ -1,18 +1,22 @@
 
-use crate::{ledger::Ledger, model::{ActionType, OrderRequest}, orderbook::Orderbook};
+use std::sync::Arc;
+
+use crate::{ledger::Ledger, model::{ActionType, AssetRegistry, MarketId, OrderRequest}, orderbook::Orderbook};
 
 pub struct Engine {
-    symbol: String,
+    market_id: MarketId,
     pub orderbook : Orderbook,
     pub ledger : Ledger,
+    pub registry: Arc<AssetRegistry>,
 }
 
 impl Engine {
-    pub fn new(symbol: String) -> Self {
+    pub fn new(market_id: MarketId, registry : Arc<AssetRegistry>) -> Self {
         Self { 
-            symbol,
+            market_id,
             orderbook : Orderbook::new(),
-            ledger : Ledger::new()
+            ledger : Ledger::new(),
+            registry
         }
     }
 
