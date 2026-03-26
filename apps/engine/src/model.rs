@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use crate::model::exchange_proto::{ExchangeRequest, exchange_request::Action};
@@ -139,3 +141,30 @@ pub type UserId = u64;
 pub type ClientOrderId = u64;
 pub type EngineOrderId = u64;
 pub type Asset = String;
+
+
+/// =============== MARKET INIT STRUCT FROM THE JOSN (AssetRegistry) ================
+
+// Load the central file
+#[derive(Deserialize, Debug, Clone)]
+pub struct MarketConfig {
+    pub base : String,
+    pub quote: String,
+    pub queue_prefix : String
+}
+#[derive(Deserialize, Debug, Clone)]
+pub struct AssetRegistry {
+    pub markets : HashMap<MarketId, InternalMarketConfig>,
+    pub asset_names: HashMap<AssetId, String>,
+    pub symbol_to_id : HashMap<String, AssetId>
+}
+#[derive(Deserialize, Debug, Clone)]
+pub struct InternalMarketConfig {
+    pub market_id: u32,
+    pub base_id : u32,
+    pub quote_id : u32,
+}
+
+pub type AssetPairName = String;
+pub type AssetId = u32;
+pub type MarketId = u32;
