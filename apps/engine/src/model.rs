@@ -116,7 +116,7 @@ pub struct Trade {
     pub price : Decimal,
     pub quantity : Decimal,
     pub taker_side : Side,
-    pub maker_side : Side
+    pub maker_side : Side,
 }
 
 // =========Matching error ========

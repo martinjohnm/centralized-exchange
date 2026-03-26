@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format, u32};
 
 use serde::Deserialize;
 
@@ -26,6 +26,12 @@ impl MarketConfig {
     pub fn get_symbol(&self) -> String {
         format!("{}_{}", self.base, self.quote)
     }
+    pub fn get_base(&self) -> String {
+        format!("{}", self.base)
+    }
+    pub fn get_quote(&self) -> String {
+        format!("{}", self.quote)
+    }
 }
 #[cfg(test)]
 mod tests {
@@ -44,3 +50,47 @@ mod tests {
         // assert!(markets.contains_key("BTC-USD"));
     }
 }
+
+pub fn initialize_registry()  {
+    let raw_data: HashMap<String, MarketConfig> = load_markets();
+
+    for r in raw_data {
+        println!("{:?}", r);
+    }
+    // let mut registry = AssetRegistry {
+    //     markets: HashMap::new(),
+    //     asset_names: HashMap::new(),
+    //     symbol_to_id: HashMap::new(),
+    // };
+
+    // let mut asset_counter: AssetId = 1 as u32;
+    // let mut market_counter: MarketId = 1 as u32;
+    // let mut name_to_asset_id: HashMap<String, AssetId> = HashMap::new();
+
+    // for (symbol, config) in raw_data {
+    //     // Helper to get or create AssetId for "BTC", "USDT", etc.
+    //     let get_asset = |name: &String, counter: &mut AssetId, map: &mut HashMap<String, AssetId>, names: &mut HashMap<AssetId, String>| {
+    //         *map.entry(name.clone()).or_insert_with(|| {
+    //             let id = *counter;
+    //             names.insert(id, name.clone());
+    //             *counter += 1;
+    //             id
+    //         })
+    //     };
+
+    //     let base_id = get_asset(&config.base, &mut asset_counter, &mut name_to_asset_id, &mut registry.asset_names);
+    //     let quote_id = get_asset(&config.quote, &mut asset_counter, &mut name_to_asset_id, &mut registry.asset_names);
+
+    //     let m_id = market_counter;
+    //     registry.markets.insert(m_id, InternalMarketConfig {
+    //         market_id: m_id,
+    //         base_id,
+    //         quote_id,
+    //     });
+    //     registry.symbol_to_id.insert(symbol, m_id);
+    //     market_counter += 1;
+    // }
+
+    
+}
+

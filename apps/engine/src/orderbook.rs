@@ -110,7 +110,7 @@ impl Orderbook {
                                     price, 
                                     quantity: match_quantity, 
                                     taker_side: taker_order.side, 
-                                    maker_side: maker_order.side 
+                                    maker_side: maker_order.side,
                                 });
 
                                 // 3. =============== POST MATCH ===============================================

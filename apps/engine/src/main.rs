@@ -4,7 +4,7 @@ mod utils;
 mod worker;
 mod orderbook;
 mod ledger;
-use crate::{utils::load_markets, worker::Worker};
+use crate::{utils::{initialize_registry, load_markets}, worker::Worker};
 use std::thread;
 
 fn main() {
@@ -14,6 +14,7 @@ fn main() {
 
     println!("Starting Exchange Engine...");
 
+    println!("{:?}", initialize_registry());
     // 2. Spawn sharded market threads
     for (_, config) in markets {
         // Prepare local copies for the thread move
