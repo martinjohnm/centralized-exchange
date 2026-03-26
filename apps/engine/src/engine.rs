@@ -36,19 +36,20 @@ impl Engine {
 
     // -----------Request handlers --------------------------
     fn handle_create(&mut self, req: OrderRequest) {
-        // Logic for adding to BTreeMap Orderbook goes here
-        // 1. add to the client_id_engine_id map
-        // 2. add to the order_users map
-        
-        let t = self.orderbook.match_or_rest(req);
-        match t {
+        // 1. Lock the users balance 
+        // 2. Match fully or rest remaining
+        let trades = self.orderbook.match_or_rest(req);
+        match trades {
             Ok(t) => {
-                println!("{:?}", t);
+                println!("{:?}", trades);
             },
             Err(e) => {
 
             }
         }
+        // 3. broadcast the events of the result
+
+        // 4. Unlock the balance 
     }
 
     fn handle_cancel(&mut self, _order: OrderRequest) {
