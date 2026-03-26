@@ -1,30 +1,7 @@
-use std::{collections::HashMap, fmt::format, str, u32};
+use std::collections::HashMap;
 
-use serde::Deserialize;
+use crate::model::{AssetId, AssetPairName, AssetRegistry, InternalMarketConfig, MarketConfig, MarketId};
 
-// Load the central file
-#[derive(Deserialize, Debug, Clone)]
-pub struct MarketConfig {
-    pub base : String,
-    pub quote: String,
-    pub queue_prefix : String
-}
-#[derive(Deserialize, Debug, Clone)]
-pub struct AssetRegistry {
-    markets : HashMap<MarketId, InternalMarketConfig>,
-    asset_names: HashMap<AssetId, String>,
-    symbol_to_id : HashMap<String, AssetId>
-}
-#[derive(Deserialize, Debug, Clone)]
-pub struct InternalMarketConfig {
-    market_id: u32,
-    base_id : u32,
-    quote_id : u32,
-}
-
-type AssetPairName = String;
-type AssetId = u32;
-type MarketId = u32;
 
 pub fn load_markets() -> HashMap<AssetPairName, MarketConfig> {
     // This macro looks relative to the FILE it is written in.

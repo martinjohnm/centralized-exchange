@@ -1,33 +1,36 @@
-use std::num::NonZeroUsize;
+use std::{num::NonZeroUsize, sync::Arc};
 
 use prost::Message;
 use redis::{Commands, Connection};
 
-use crate::{engine::Engine, model::{OrderRequest, exchange_proto::ExchangeRequest}};
+use crate::{engine::Engine, model::{Asset, AssetRegistry, MarketId, OrderRequest, exchange_proto::ExchangeRequest}};
 
 
 
 
 pub struct Worker {
-    pub connection: Connection,
-    pub queue_key : String,
-    pub symbol : String,
+    pub market_id: MarketId,
+    pub registry_handle: Arc<AssetRegistry>,
+    pub queue : String,
+    pub redis_url : String,
+    pub connection : Connection,
     pub engine : Engine
 }
 
 impl Worker {
-    pub fn new(queue_key : &str, symbol: &str, redis_url : &str) -> Self {
+    pub fn new(market_id : MarketId, registry_handle: Arc<AssetRegistry>, queue : String, redis_url : String) -> Self {
 
-        let queue_key = queue_key.to_string();
-        let symbol = symbol.to_string();
+        let queue_key = queue.to_string();
         let redis_client = redis::Client::open(redis_url).unwrap();
 
-        let engine = Engine::new(symbol.clone());
+        let engine = Engine::new(market_id, registry_handle);
         let connection = redis_client.get_connection().expect("failed to connect to redis");
 
         Self { 
-            queue_key,
-            symbol ,
+            market_id,
+            registry_handle,
+            queue,
+            redis_url,
             connection,
             engine
         }
@@ -43,12 +46,12 @@ impl Worker {
 
         loop {
             // 1. BLOCK for the first item (Parks the thread until data exists)
-            let first_time : Vec<Vec<u8>> = self.connection.brpop(&self.queue_key, 0.0).expect("Redis connection lost");
+            let first_time : Vec<Vec<u8>> = self.connection.brpop(self.queue, 0.0).expect("Redis connection lost");
             let mut batch = vec![first_time[1].clone()];
 
             // 2. Greedy drain: Grab up to 99 more items immediately.
             let count = NonZeroUsize::new(99);
-            if let Ok(extra_items) = self.connection.rpop::<&str, Vec<Vec<u8>>>(&self.queue_key, count) {
+            if let Ok(extra_items) = self.connection.rpop::<String, Vec<Vec<u8>>>(self.queue, count) {
                 batch.extend(extra_items)
             }
 
