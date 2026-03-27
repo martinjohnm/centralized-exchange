@@ -43,7 +43,6 @@ impl Engine {
             Ok(trades) => {
                 for trade in trades {
                     // unlock the makers (who sat in the orderbook ) fund
-
                 }
             },
             Err(e) => {
