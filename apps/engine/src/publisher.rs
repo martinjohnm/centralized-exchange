@@ -17,4 +17,9 @@ impl RedisPublisher {
             redis_url 
         }
     }
+
+    pub async fn run(mut self) {
+        let client = redis::Client::open(self.redis_url).unwrap();
+        
+    }
 }
