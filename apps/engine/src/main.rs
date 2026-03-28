@@ -4,6 +4,7 @@ mod utils;
 mod worker;
 mod orderbook;
 mod ledger;
+mod publisher;
 use crate::{utils::{initialize_registry, load_markets}, worker::Worker};
 use std::thread;
 
