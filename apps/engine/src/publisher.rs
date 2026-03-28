@@ -1,4 +1,4 @@
-use tokio::sync::mpsc;
+use tokio::{net::unix::pipe::Receiver, sync::mpsc};
 
 use crate::model::Trade;
 
@@ -10,5 +10,10 @@ pub struct RedisPublisher {
 }
 
 impl RedisPublisher {
-    
+    pub fn new(receiver :mpsc::Receiver<Trade>, redis_url: String) -> Self {
+        Self { 
+            receiver,
+            redis_url 
+        }
+    }
 }

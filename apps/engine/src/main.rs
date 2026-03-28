@@ -5,10 +5,13 @@ mod worker;
 mod orderbook;
 mod ledger;
 mod publisher;
-use crate::{utils::{initialize_registry, load_markets}, worker::Worker};
+use tokio::sync::mpsc;
+
+use crate::{publisher::RedisPublisher, utils::{initialize_registry, load_markets}, worker::Worker};
 use std::thread;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     // 1. Load configuration once at the top level
     let markets = load_markets();
     let redis_url = "redis://127.0.0.1:6379";
@@ -16,6 +19,19 @@ fn main() {
     println!("Starting Exchange Engine...");
 
     println!("{:?}", initialize_registry());
+
+
+    // 1. Create the central "Trade pipe" 
+    let (trade_tx, trade_rx) = mpsc::channel(10000);
+
+    // 2. Create a green thread for broadcastor (which holds the single receiver and listens and broadcasts 
+    //    events from various markets in which each markets clones a copy of the transmitter to send events)
+    let redis_url_to_redis_publisher = redis_url.to_string().clone();
+    tokio::spawn(async move {
+        let publisher = RedisPublisher::new(trade_rx, redis_url_to_redis_publisher);
+        publisher
+    });
+
     // 2. Spawn sharded market threads
     for (_, config) in markets {
         // Prepare local copies for the thread move
