@@ -8,6 +8,7 @@ pub struct Engine {
     symbol: String,
     pub orderbook : Orderbook,
     pub ledger : Ledger,
+    pub transmitter: Sender<InternalTrade>
 }
 
 impl Engine {
@@ -16,7 +17,7 @@ impl Engine {
             symbol,
             orderbook : Orderbook::new(trade_producer.clone()),
             ledger : Ledger::new(),
-            
+            transmitter : trade_producer
         }
     }
 
@@ -47,6 +48,7 @@ impl Engine {
             Ok(trades) => {
                 for trade in trades {
                     // unlock the makers (who sat in the orderbook ) fund
+                    self.transmitter.send(trade);
                 }
             },
             Err(e) => {
