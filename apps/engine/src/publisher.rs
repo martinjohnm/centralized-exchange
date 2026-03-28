@@ -20,6 +20,9 @@ impl RedisPublisher {
 
     pub async fn run(mut self) {
         let client = redis::Client::open(self.redis_url).unwrap();
-        
+        let mut conn = client.get_multiplexed_async_connection()
+            .await
+            .expect("Redis pub sub error");
+        println!("Publisher is online, Multiplexed connection established")
     }
 }
