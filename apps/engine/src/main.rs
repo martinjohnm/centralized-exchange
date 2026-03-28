@@ -29,7 +29,7 @@ async fn main() {
     let redis_url_to_redis_publisher = redis_url.to_string().clone();
     tokio::spawn(async move {
         let publisher = RedisPublisher::new(trade_rx, redis_url_to_redis_publisher);
-        publisher
+        publisher.run().await;
     });
 
     // 2. Spawn sharded market threads
