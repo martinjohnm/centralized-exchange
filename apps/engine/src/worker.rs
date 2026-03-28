@@ -1,10 +1,9 @@
-use std::num::NonZeroUsize;
+use std::{num::NonZeroUsize};
 
 use prost::Message;
 use redis::{Commands, Connection};
-use tokio::sync::mpsc;
-
-use crate::{engine::Engine, model::{OrderRequest, Trade, exchange_proto::ExchangeRequest}};
+use tokio::sync::mpsc::{Sender, Receiver};
+use crate::{engine::Engine, model::{InternalTrade, OrderRequest, exchange_proto::ExchangeRequest}};
 
 
 
@@ -14,17 +13,18 @@ pub struct Worker {
     pub queue_key : String,
     pub symbol : String,
     pub engine : Engine,
-    pub trade_producer: mpsc::Sender<Trade>
+    
 }
 
 impl Worker {
-    pub fn new(queue_key : &str, symbol: &str, redis_url : &str, trade_producer : mpsc::Sender<Trade>) -> Self {
+    pub fn new(queue_key : &str, symbol: &str, redis_url : &str, trade_producer : Sender<InternalTrade>) -> Self {
 
         let queue_key = queue_key.to_string();
         let symbol = symbol.to_string();
         let redis_client = redis::Client::open(redis_url).unwrap();
 
-        let engine = Engine::new(symbol.clone());
+        let tx_clone = trade_producer.clone();
+        let engine = Engine::new(symbol.clone(), tx_clone);
         let connection = redis_client.get_connection().expect("failed to connect to redis");
 
         Self { 
@@ -32,7 +32,7 @@ impl Worker {
             symbol ,
             connection,
             engine,
-            trade_producer
+            
         }
     }
 

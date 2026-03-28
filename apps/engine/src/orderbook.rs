@@ -1,9 +1,10 @@
-use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use std::{collections::{BTreeMap, HashMap, HashSet, VecDeque}};
 
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
+use tokio::sync::mpsc::{Sender, Receiver};
 
-use crate::model::{ClientOrderId, EngineOrderId, MatchingError, Order, OrderError, OrderRequest, Side, Trade, UserId};
+use crate::model::{ClientOrderId, EngineOrderId, InternalTrade, MatchingError, Order, OrderError, OrderRequest, Side, UserId};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 
@@ -28,10 +29,11 @@ pub struct Orderbook {
 
     // Key: EngineOrderId -> Value: (Price, Side)
     pub orders_metadata: HashMap<EngineOrderId, (Decimal, Side)>,
+    trade_producer : Sender<InternalTrade>
 }
 
 impl Orderbook {
-    pub fn new() -> Self {
+    pub fn new(trade_producer : Sender<InternalTrade>) -> Self {
         Self {
             bids : BTreeMap::new(),
             asks : BTreeMap::new(),
@@ -39,6 +41,7 @@ impl Orderbook {
             user_orders: HashMap::new(),
             last_engine_id : 1,
             orders_metadata : HashMap::new(),
+            trade_producer 
         }
     }
 
@@ -48,13 +51,13 @@ impl Orderbook {
     }
 
     // ========== THE HOT PATH ===========
-    pub fn match_or_rest(&mut self, req: OrderRequest) -> Result<Vec<Trade>, MatchingError> {
+    pub fn match_or_rest(&mut self, req: OrderRequest) -> Result<Vec<InternalTrade>, MatchingError> {
 
 
         // 1). ------------------------- VALIDATION AND PROMOTION ------------------------------
         // If validation fails, it exits here with the Err.
         let mut taker_order = self.validate_and_promote(req)?;
-        let mut trades: Vec<Trade> = Vec::new();
+        let mut trades: Vec<InternalTrade> = Vec::new();
         
         let mut orders_to_scrub: Vec<(EngineOrderId, UserId, ClientOrderId)> = Vec::new();
         // 2). ------------------------- MATCHING LOGIC ---------------------------------- 
@@ -108,7 +111,7 @@ impl Orderbook {
                                     .duration_since(UNIX_EPOCH)
                                     .expect("Time went backwards") // This only happens if the system clock is reset
                                     .as_micros() as u64;           // Used .as_micros() for more precision
-                                trades.push(Trade { 
+                                trades.push(InternalTrade { 
                                     maker_id: maker_order.engine_id, 
                                     taker_id: taker_order.engine_id, 
                                     price, 
@@ -357,9 +360,11 @@ impl Orderbook {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
     use rust_decimal::prelude::FromPrimitive;
     use rust_decimal_macros::dec;
+    use tokio::sync::mpsc;
     use crate::model::{Side, OrderType, ActionType};
 
     fn mock_request(client_id: u64, price: Option<Decimal>, qty: Option<Decimal>) -> OrderRequest {
@@ -376,10 +381,15 @@ mod tests {
             timestamp: 123456789,
         }
     }
+    
 
     #[test]
     fn test_validation_errors() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(10000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
 
         // 1. Test Missing Price
         let req = mock_request(101, None, Some(dec!(1.0)));
@@ -396,7 +406,11 @@ mod tests {
     }
     #[test]
     fn test_promotion_and_id_generation() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         let req = mock_request(101, Some(dec!(50000)), Some(dec!(1.5)));
 
         // First promotion
@@ -411,7 +425,11 @@ mod tests {
 
     #[test]
     fn test_indexing_logic() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         let user_id = 1;
         let client_id = 101;
         
@@ -442,7 +460,11 @@ mod tests {
     }
     #[test]
     fn test_remove_indexes() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         let (u_id, c_id, e_id) = (1, 101, 55);
         
         // Setup: Add an order first
@@ -468,7 +490,11 @@ mod tests {
 
     #[test]
     fn test_get_level_mut_and_modify() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         let price = dec!(50000);
         let side = Side::Buy;
 
@@ -503,7 +529,11 @@ mod tests {
 
     #[test]
     fn test_get_level_mut_missing() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         
         // Try to get a price that hasn't been added
         let result = ob.get_level_mut(dec!(99999), Side::Sell);
@@ -513,7 +543,11 @@ mod tests {
 
     #[test]
     fn test_get_level_mut_wrong_side() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         let price = dec!(100);
         
         // Add a BID (Buy)
@@ -529,7 +563,11 @@ mod tests {
     // The Cancel logic unit tests 
     // Helper to bootstrap an orderbook with a resting order
     fn setup_with_order(engine_id: u64, user_id: u64, client_id: u64) -> Orderbook {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         let order = Order {
             engine_id,
             user_id,
@@ -582,7 +620,11 @@ mod tests {
 
     #[test]
     fn test_bulk_cancel_all_for_user() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         let user_id = 42;
         let common_price = dec!(50000); // All orders at the same price
         // 1. Setup: Give user 42 three different orders at different prices
@@ -617,7 +659,11 @@ mod tests {
 
     #[test]
     fn test_cancel_order_not_found_scenarios() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         
         // Try to cancel non-existent engine_id
         assert!(matches!(ob.cancel_by_id(999), Err(OrderError::OrderNotFound)));
@@ -629,7 +675,11 @@ mod tests {
 
     fn test_is_match () {
 
-        let ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
 
         let mut best_price = Decimal::from_i32(120).unwrap();
         let mut taker_price = Decimal::from_i32(100).unwrap();
@@ -651,7 +701,11 @@ mod tests {
     // 1. Test for full fill 
     #[test]
     fn test_match_full_fill() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
 
         // 1. Maker: sell 1.0 BTC @50,000
         ob.match_or_rest(OrderRequest {
@@ -693,7 +747,11 @@ mod tests {
     // 2. Test for partial fill (Maker priority)
     #[test]
     fn test_partial_fill_priority() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
         // 1. Maker: sell 10.0 BTC @50,000
         ob.match_or_rest(OrderRequest {
             user_id: 1,
@@ -732,7 +790,11 @@ mod tests {
 
     #[test]
     fn test_walking_the_book() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
 
         // Add two sell levels
         // 1. Maker: sell 1.0 BTC @100
@@ -787,7 +849,11 @@ mod tests {
 
     #[test]
     fn test_self_trade_prevention() {
-        let mut ob = Orderbook::new();
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(tx);
 
         let user_id = 42;
 

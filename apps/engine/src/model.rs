@@ -111,7 +111,7 @@ pub enum LedgerError {
 
 // ======== Out types (eg: Trades, Order_cancelled, Rejected) ==========================
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct Trade {
+pub struct InternalTrade {
     pub maker_id : u64, 
     pub taker_id : u64,
     pub price : Decimal,
@@ -121,8 +121,8 @@ pub struct Trade {
     pub timestamp : u64
 }
 
-impl From<Trade> for ProtoTrade {
-    fn from(trade: Trade) -> Self {
+impl From<InternalTrade> for ProtoTrade {
+    fn from(trade: InternalTrade) -> Self {
 
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)

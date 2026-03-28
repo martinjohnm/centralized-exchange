@@ -5,9 +5,9 @@ mod worker;
 mod orderbook;
 mod ledger;
 mod publisher;
-use tokio::sync::mpsc;
 
-use crate::{publisher::RedisPublisher, utils::{initialize_registry, load_markets}, worker::Worker};
+use tokio::sync::mpsc;
+use crate::{model::InternalTrade, publisher::RedisPublisher, utils::{initialize_registry, load_markets}, worker::Worker};
 use std::thread;
 
 #[tokio::main]
@@ -22,7 +22,7 @@ async fn main() {
 
 
     // 1. Create the central "Trade pipe" 
-    let (trade_tx, trade_rx) = mpsc::channel(10000);
+    let (trade_tx, trade_rx) = mpsc::channel::<InternalTrade>(10000);
 
     // 2. Create a green thread for broadcastor (which holds the single receiver and listens and broadcasts 
     //    events from various markets in which each markets clones a copy of the transmitter to send events)

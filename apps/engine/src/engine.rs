@@ -1,5 +1,8 @@
 
-use crate::{ledger::Ledger, model::{ActionType, OrderRequest}, orderbook::Orderbook};
+
+use tokio::sync::mpsc::{self, Sender};
+
+use crate::{ledger::Ledger, model::{ActionType, OrderRequest, InternalTrade}, orderbook::Orderbook};
 
 pub struct Engine {
     symbol: String,
@@ -8,11 +11,12 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(symbol: String) -> Self {
+    pub fn new(symbol: String, trade_producer : Sender<InternalTrade>) -> Self {
         Self { 
             symbol,
-            orderbook : Orderbook::new(),
-            ledger : Ledger::new()
+            orderbook : Orderbook::new(trade_producer.clone()),
+            ledger : Ledger::new(),
+            
         }
     }
 
