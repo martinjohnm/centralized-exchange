@@ -39,12 +39,15 @@ async fn main() {
         let queue = config.get_redis_key().to_string();
         let symbol = config.get_symbol().to_string();
 
+        // create a transmitter clone before the thread creation
+        let transmitter_clone = trade_tx.clone();
+
         thread::spawn(move || {
             println!("[{}] Initializing market thread...", symbol);
 
             // Engine and Worker are created inside the thread to ensure
             // they are owned by the thread's stack (Shared-Nothing).
-            let mut worker = Worker::new(&queue, &symbol, &redis_url);
+            let mut worker = Worker::new(&queue, &symbol, &redis_url, transmitter_clone);
             
             worker.run_worker();
         });
