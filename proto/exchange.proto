@@ -49,3 +49,14 @@ message Deposit {
     string amount = 2;
     uint64 tx_id = 3;  // For idempotency
 }
+
+// ====== OUT TYPES ==========================================
+message Trade {
+    uint64 maker_id = 1;
+    uint64 taker_id = 2;
+    string price = 3;     // "100.50"
+    string quantity = 4;  // "0.001"
+    string taker_side = 5; // "buy" or "sell"
+    string maker_side = 6;
+    uint64 timestamp = 7;
+}
