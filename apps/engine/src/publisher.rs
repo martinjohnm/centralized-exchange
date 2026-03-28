@@ -23,6 +23,10 @@ impl RedisPublisher {
         let mut conn = client.get_multiplexed_async_connection()
             .await
             .expect("Redis pub sub error");
-        println!("Publisher is online, Multiplexed connection established")
+        println!("Publisher is online, Multiplexed connection established");
+
+        while let Some(internal_trade) = self.receiver.recv().await {
+            println!("{:?}", internal_trade);
+        }
     }
 }

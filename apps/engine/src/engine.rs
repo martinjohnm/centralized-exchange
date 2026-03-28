@@ -48,7 +48,9 @@ impl Engine {
             Ok(trades) => {
                 for trade in trades {
                     // unlock the makers (who sat in the orderbook ) fund
-                    self.transmitter.send(trade);
+                    if let Err(e) = self.transmitter.try_send(trade) {
+                        eprintln!("trade is not sent");
+                    }
                 }
             },
             Err(e) => {
