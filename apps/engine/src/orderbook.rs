@@ -111,6 +111,7 @@ impl Orderbook {
                                     quantity: match_quantity, 
                                     taker_side: taker_order.side, 
                                     maker_side: maker_order.side,
+                                    timestamp : 
                                 });
 
                                 // 3. =============== POST MATCH ===============================================

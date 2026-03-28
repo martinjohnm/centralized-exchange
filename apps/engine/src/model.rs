@@ -1,6 +1,8 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use crate::model::exchange_proto::{ExchangeRequest, exchange_request::Action, Trade as ProtoTrade};
+use std::time::{SystemTime, UNIX_EPOCH};
+
 // 1. Order Request struct
 #[derive(Debug, Clone)]
 pub struct OrderRequest {
@@ -116,10 +118,17 @@ pub struct Trade {
     pub quantity : Decimal,
     pub taker_side : Side,
     pub maker_side : Side,
+    pub timestamp : u64
 }
 
 impl From<Trade> for ProtoTrade {
     fn from(trade: Trade) -> Self {
+
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_micros() as u64; // Used .as_micros() for higher precision
+        
         Self { 
             maker_id: trade.maker_id, 
             taker_id: trade.taker_id, 
@@ -129,7 +138,8 @@ impl From<Trade> for ProtoTrade {
             quantity: trade.quantity.to_string(),
 
             taker_side: if trade.taker_side == Side::Buy { 0 } else { 1 },
-            maker_side: if trade.maker_side == Side::Buy { 0 } else { 1 }
+            maker_side: if trade.maker_side == Side::Buy { 0 } else { 1 },
+            timestamp : now
         }
     }
 }
