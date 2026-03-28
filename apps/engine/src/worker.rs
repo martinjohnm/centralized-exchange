@@ -2,8 +2,9 @@ use std::num::NonZeroUsize;
 
 use prost::Message;
 use redis::{Commands, Connection};
+use tokio::sync::mpsc;
 
-use crate::{engine::Engine, model::{OrderRequest, exchange_proto::ExchangeRequest}};
+use crate::{engine::Engine, model::{OrderRequest, Trade, exchange_proto::ExchangeRequest}};
 
 
 
@@ -12,11 +13,12 @@ pub struct Worker {
     pub connection: Connection,
     pub queue_key : String,
     pub symbol : String,
-    pub engine : Engine
+    pub engine : Engine,
+    pub trade_producer: mpsc::Sender<Trade>
 }
 
 impl Worker {
-    pub fn new(queue_key : &str, symbol: &str, redis_url : &str) -> Self {
+    pub fn new(queue_key : &str, symbol: &str, redis_url : &str, trade_producer : mpsc::Sender<Trade>) -> Self {
 
         let queue_key = queue_key.to_string();
         let symbol = symbol.to_string();
@@ -29,7 +31,8 @@ impl Worker {
             queue_key,
             symbol ,
             connection,
-            engine
+            engine,
+            trade_producer
         }
     }
 
