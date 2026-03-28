@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // 3. Now we can await redis (The RNG is died)
 
                 let _: () = redis::cmd("LPUSH")
-                    .arg("orders:BTC_USDT")
+                    .arg("trades:btc_usdt")
                     .arg(payload)
                     .query_async(&mut bot_conn)
                     .await
