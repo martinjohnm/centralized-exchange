@@ -4,7 +4,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 
 use crate::model::{ClientOrderId, EngineOrderId, MatchingError, Order, OrderError, OrderRequest, Side, Trade, UserId};
-
+use std::time::{SystemTime, UNIX_EPOCH};
 
 
 
@@ -104,6 +104,10 @@ impl Orderbook {
                                 taker_order.quantity -= match_quantity;
                                 maker_order.quantity -= match_quantity;
 
+                                let timestamp = SystemTime::now()
+                                    .duration_since(UNIX_EPOCH)
+                                    .expect("Time went backwards") // This only happens if the system clock is reset
+                                    .as_micros() as u64;           // Used .as_micros() for more precision
                                 trades.push(Trade { 
                                     maker_id: maker_order.engine_id, 
                                     taker_id: taker_order.engine_id, 
@@ -111,7 +115,7 @@ impl Orderbook {
                                     quantity: match_quantity, 
                                     taker_side: taker_order.side, 
                                     maker_side: maker_order.side,
-                                    timestamp : 
+                                    timestamp
                                 });
 
                                 // 3. =============== POST MATCH ===============================================
