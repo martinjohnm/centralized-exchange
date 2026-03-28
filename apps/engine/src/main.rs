@@ -7,18 +7,16 @@ mod ledger;
 mod publisher;
 
 use tokio::sync::mpsc;
-use crate::{model::InternalTrade, publisher::RedisPublisher, utils::{initialize_registry, load_markets}, worker::Worker};
+use crate::{model::InternalTrade, publisher::RedisPublisher, utils::{MarketConfig, load_markets_from_proto}, worker::Worker};
 use std::thread;
 
 #[tokio::main]
 async fn main() {
     // 1. Load configuration once at the top level
-    let markets = load_markets();
+    let markets = load_markets_from_proto();
     let redis_url = "redis://127.0.0.1:6379";
 
     println!("Starting Exchange Engine...");
-
-    println!("{:?}", initialize_registry());
 
 
     // 1. Create the central "Trade pipe" 
@@ -33,21 +31,21 @@ async fn main() {
     });
 
     // 2. Spawn sharded market threads
-    for (_, config) in markets {
+    for (market_id, config) in markets {
         // Prepare local copies for the thread move
         let redis_url = redis_url.to_string();
-        let queue = config.get_redis_key().to_string();
-        let symbol = config.get_symbol().to_string();
-
+        
         // create a transmitter clone before the thread creation
-        let transmitter_clone = trade_tx.clone();
+        let tx_clone = trade_tx.clone();
+
+        
 
         thread::spawn(move || {
-            println!("[{}] Initializing market thread...", symbol);
+            println!("[] Initializing market thread...");
 
             // Engine and Worker are created inside the thread to ensure
             // they are owned by the thread's stack (Shared-Nothing).
-            let mut worker = Worker::new(&queue, &symbol, &redis_url, transmitter_clone);
+            let mut worker = Worker::new(market_id, config, &redis_url, tx_clone);
             
             worker.run_worker();
         });

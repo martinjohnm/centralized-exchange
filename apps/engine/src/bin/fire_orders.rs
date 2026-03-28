@@ -41,7 +41,7 @@ fn main() {
 
     let client = redis::Client::open("redis://127.0.0.1:6379").expect("Invalid Redis URL");
     let mut con = client.get_connection().expect("Failed to connect to Redis");
-    let queue_key = "orders:BTC_USDT";
+    let queue_key = "trades:btc_usdt";
 
     let throttler = Throttler::new(target_ops);
     let mut total_count: u64 = 0;

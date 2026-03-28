@@ -3,36 +3,34 @@ use std::{num::NonZeroUsize};
 use prost::Message;
 use redis::{Commands, Connection};
 use tokio::sync::mpsc::{Sender, Receiver};
-use crate::{engine::Engine, model::{InternalTrade, OrderRequest, exchange_proto::ExchangeRequest}};
+use crate::{engine::Engine, model::{InternalTrade, OrderRequest, exchange_proto::{ExchangeRequest, MarketId}}, utils::MarketConfig};
 
 
 
 
 pub struct Worker {
     pub connection: Connection,
-    pub queue_key : String,
-    pub symbol : String,
+    pub market_id : MarketId,
     pub engine : Engine,
-    
+    pub config : MarketConfig
 }
 
 impl Worker {
-    pub fn new(queue_key : &str, symbol: &str, redis_url : &str, trade_producer : Sender<InternalTrade>) -> Self {
+    pub fn new(market_id : MarketId, config : MarketConfig, redis_url : &str,  tx_clone : Sender<InternalTrade>) -> Self {
 
-        let queue_key = queue_key.to_string();
-        let symbol = symbol.to_string();
+        let queue_key = config.redis_key;
+        let symbol = market_id;
         let redis_client = redis::Client::open(redis_url).unwrap();
 
-        let tx_clone = trade_producer.clone();
-        let engine = Engine::new(symbol.clone(), tx_clone);
+        let tx_clone = tx_clone.clone();
+        let engine = Engine::new(config, tx_clone);
         let connection = redis_client.get_connection().expect("failed to connect to redis");
 
         Self { 
-            queue_key,
-            symbol ,
+            market_id,
             connection,
             engine,
-            
+            config
         }
     }
 
@@ -46,12 +44,12 @@ impl Worker {
 
         loop {
             // 1. BLOCK for the first item (Parks the thread until data exists)
-            let first_time : Vec<Vec<u8>> = self.connection.brpop(&self.queue_key, 0.0).expect("Redis connection lost");
+            let first_time : Vec<Vec<u8>> = self.connection.brpop(&self.config.redis_key, 0.0).expect("Redis connection lost");
             let mut batch = vec![first_time[1].clone()];
 
             // 2. Greedy drain: Grab up to 99 more items immediately.
             let count = NonZeroUsize::new(99);
-            if let Ok(extra_items) = self.connection.rpop::<&str, Vec<Vec<u8>>>(&self.queue_key, count) {
+            if let Ok(extra_items) = self.connection.rpop::<&str, Vec<Vec<u8>>>(&self.config.redis_key, count) {
                 batch.extend(extra_items)
             }
 

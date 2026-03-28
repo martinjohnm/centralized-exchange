@@ -2,20 +2,20 @@
 
 use tokio::sync::mpsc::{self, Sender};
 
-use crate::{ledger::Ledger, model::{ActionType, OrderRequest, InternalTrade}, orderbook::Orderbook};
+use crate::{ledger::Ledger, model::{ActionType, InternalTrade, OrderRequest, exchange_proto::MarketId}, orderbook::Orderbook, utils::MarketConfig};
 
 pub struct Engine {
-    symbol: String,
+    pub config: MarketConfig,
     pub orderbook : Orderbook,
     pub ledger : Ledger,
     pub transmitter: Sender<InternalTrade>
 }
 
 impl Engine {
-    pub fn new(symbol: String, trade_producer : Sender<InternalTrade>) -> Self {
+    pub fn new(config: MarketConfig, trade_producer : Sender<InternalTrade>) -> Self {
         Self { 
-            symbol,
-            orderbook : Orderbook::new(trade_producer.clone()),
+            config,
+            orderbook : Orderbook::new(config,trade_producer.clone()),
             ledger : Ledger::new(),
             transmitter : trade_producer
         }

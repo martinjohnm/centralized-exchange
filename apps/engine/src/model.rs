@@ -1,6 +1,6 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use crate::model::exchange_proto::{ExchangeRequest, exchange_request::Action, Trade as ProtoTrade};
+use crate::model::exchange_proto::{AssetId, ExchangeRequest, MarketId, Trade as ProtoTrade, exchange_request::Action};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 // 1. Order Request struct
@@ -110,7 +110,7 @@ pub enum LedgerError {
 }
 
 // ======== Out types (eg: Trades, Order_cancelled, Rejected) ==========================
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy)]
 pub struct InternalTrade {
     pub maker_id : u64, 
     pub taker_id : u64,
@@ -118,7 +118,10 @@ pub struct InternalTrade {
     pub quantity : Decimal,
     pub taker_side : Side,
     pub maker_side : Side,
-    pub timestamp : u64
+    pub timestamp : u64,
+    pub base : AssetId,
+    pub quote : AssetId,
+    pub market : MarketId
 }
 
 impl From<InternalTrade> for ProtoTrade {
@@ -139,7 +142,25 @@ impl From<InternalTrade> for ProtoTrade {
 
             taker_side: if trade.taker_side == Side::Buy { 0 } else { 1 },
             maker_side: if trade.maker_side == Side::Buy { 0 } else { 1 },
-            timestamp : now
+            timestamp : now,
+            base : match trade.base {
+                AssetId::Btc => 1,
+                AssetId::Eth => 2,
+                AssetId::Usdt => 3,
+                AssetId::AssetUnknown => 0
+            },
+            quote : match  trade.quote {
+                AssetId::Btc => 1,
+                AssetId::Eth => 2,
+                AssetId::Usdt => 3,
+                AssetId::AssetUnknown => 0
+            },
+            market : match trade.market {
+                MarketId::BtcUsdt => 1,
+                MarketId::EthUsdt => 2,
+                MarketId::MarketUnknown => 0
+            }
+
         }
     }
 }

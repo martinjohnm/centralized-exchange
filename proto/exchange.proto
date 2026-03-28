@@ -59,4 +59,20 @@ message Trade {
     Side taker_side = 5; // "buy" or "sell"
     Side maker_side = 6;
     uint64 timestamp = 7;
+    MarketId market = 8;
+    AssetId base = 9;
+    AssetId quote = 10;
+}
+
+enum AssetId {
+    ASSET_UNKNOWN = 0;
+    BTC = 1;
+    ETH = 2;
+    USDT = 3;
+}
+
+enum MarketId {
+    MARKET_UNKNOWN = 0;
+    BTC_USDT = 1; // Base: BTC (1), Quote: USDT (3)
+    ETH_USDT = 2; // Base: ETH (2), Quote: USDT (3)
 }
