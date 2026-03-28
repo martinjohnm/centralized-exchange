@@ -93,7 +93,7 @@ fn generate_random_order(
             .as_secs(), // Use real timestamps!
         action: Some(exchange_proto::exchange_request::Action::Create(
             exchange_proto::CreateOrder {
-                symbol: "BTC_USDT".to_string(),
+                market: 1,
                 side: if is_buy { 0 } else { 1 },
                 price: format!("{:.2}", order_price),
                 quantity: rng.gen_range(1..101).to_string(),

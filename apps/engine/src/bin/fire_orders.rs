@@ -106,7 +106,7 @@ fn generate_random_order(total_count: u64) -> exchange_proto::ExchangeRequest {
         timestamp: 123456,
         action: Some(exchange_proto::exchange_request::Action::Create(
             exchange_proto::CreateOrder {
-                symbol: "BTC_USDT".to_string(),
+                market: 1,
                 side,
                 price: price_str,
                 quantity: qty_str,

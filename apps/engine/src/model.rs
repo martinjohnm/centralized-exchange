@@ -7,7 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[derive(Debug, Clone)]
 pub struct OrderRequest {
     pub user_id : u64,
-    pub symbol : String,
+    pub market : MarketId,
     pub side : Side,
     pub price : Option<Decimal>,
     pub quantity : Option<Decimal>,
@@ -63,7 +63,7 @@ impl TryFrom<ExchangeRequest> for OrderRequest {
             Action::Create(c) => Ok(OrderRequest {
                 user_id,
                 timestamp,
-                symbol: c.symbol,
+                market: c.market(),
                 side: if c.side == 0 { Side::Buy } else { Side::Sell },
                 price: Some(Decimal::from_str_exact(&c.price).map_err(|_| "Invalid Price Format")?),
                 quantity: Some(Decimal::from_str_exact(&c.quantity).map_err(|_| "Invalid Qty Format")?),
@@ -77,7 +77,7 @@ impl TryFrom<ExchangeRequest> for OrderRequest {
             Action::Cancel(c) => Ok(OrderRequest {
                 user_id,
                 timestamp,
-                symbol: c.symbol,
+                market: c.market(),
                 side: Side::Buy, // Placeholder (not used for cancel)
                 price: None,
                 quantity: None,

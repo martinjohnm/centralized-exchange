@@ -25,7 +25,7 @@ message ExchangeRequest {
 }
 
 message CreateOrder {
-    string symbol = 1;
+    MarketId market = 1;
     string price = 2;
     string quantity = 3;
     Side side = 4;
@@ -34,18 +34,18 @@ message CreateOrder {
 }
 
 message CancelOrder {
-    string symbol = 1;
+    MarketId market = 1;
     // The engine tries client_id first, then engine_id
     uint64 client_id = 2; 
     uint64 engine_id = 3; 
 }
 
 message CancelAll {
-    string symbol = 1;
+    MarketId market = 1;
 }
 
 message Deposit {
-    string asset = 1; // "USDT"
+    AssetId asset = 1; // "USDT"
     string amount = 2;
     uint64 tx_id = 3;  // For idempotency
 }
