@@ -1,7 +1,6 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use crate::model::exchange_proto::{ExchangeRequest, exchange_request::Action};
-
+use crate::model::exchange_proto::{ExchangeRequest, exchange_request::Action, Trade as ProtoTrade};
 // 1. Order Request struct
 #[derive(Debug, Clone)]
 pub struct OrderRequest {
@@ -117,6 +116,22 @@ pub struct Trade {
     pub quantity : Decimal,
     pub taker_side : Side,
     pub maker_side : Side,
+}
+
+impl From<Trade> for ProtoTrade {
+    fn from(trade: Trade) -> Self {
+        Self { 
+            maker_id: trade.maker_id, 
+            taker_id: trade.taker_id, 
+
+            // convert decimal to string for the proto wire format
+            price: trade.price.to_string(), 
+            quantity: trade.quantity.to_string(),
+
+            taker_side: if trade.taker_side == Side::Buy { 0 } else { 1 },
+            maker_side: if trade.maker_side == Side::Buy { 0 } else { 1 }
+        }
+    }
 }
 
 // =========Matching error ========
