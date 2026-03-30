@@ -27,6 +27,9 @@ impl RedisPublisher {
             .expect("Redis pub sub error");
         println!("Publisher is online, Multiplexed connection established");
 
+
+        let mut batch = Vec::with_capacity(100); // 100 is a sweet spot for throughput
+
         while let Some(internal_trade) = self.receiver.recv().await {
             // 1. transform the internal_trade to Trade (Proto)
             let proto_trade = Trade {
@@ -49,16 +52,34 @@ impl RedisPublisher {
                 continue;
             }
 
+            
+            // very important concept!!!!!!!!!!!!!!!
+
             // 3. publish to redis channel 
             // we use the market_id to craete a dynamic channel name
             let channel = format!("trades:{:?}", internal_trade.market).to_lowercase();
-            let result: redis::RedisResult<i32> = conn.publish(&channel, payload).await;
-            let _: () = match result {
-                Ok(count) => {
-                    // track the listeners
-                },
-                Err(e) => eprintln!("Redis publish error: {}", e)
-            };
+            batch.push((channel, payload));
+            
+            // 3. TRIGGER FLUSH: If batch is full OR the channel is currently empty
+            // receiver.is_empty() is great for "Opportunistic Batching"
+            if batch.len() >= 100 || self.receiver.is_empty() {
+                let mut pipe = redis::pipe();
+                
+                for (chan, data) in batch.drain(..) {
+                    pipe.publish(chan, data);
+                }
+
+                // Execute the whole batch in ONE network round-trip
+                let _: redis::RedisResult<()> = pipe.query_async(&mut conn).await;
+            }
+            
+            // let result: redis::RedisResult<i32> = conn.publish(&channel, payload).await;
+            // let _: () = match result {
+            //     Ok(count) => {
+            //         // track the listeners
+            //     },
+            //     Err(e) => eprintln!("Redis publish error: {}", e)
+            // };
         }
     }
 }
