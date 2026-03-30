@@ -1,22 +1,32 @@
+use std::collections::HashMap;
+
 use prost::Message;
 use redis::AsyncCommands;
 use tokio::{net::unix::pipe::Receiver, sync::mpsc};
 
-use crate::model::{InternalTrade, exchange_proto::Trade};
+use crate::model::{InternalTrade, exchange_proto::{MarketId, Trade}};
 
 
 
 
 pub struct RedisPublisher {
     pub receiver : mpsc::Receiver<InternalTrade>,
-    pub redis_url : String
+    pub redis_url : String,
+    pub channels : HashMap<MarketId , &'static str>
 }
 
 impl RedisPublisher {
     pub fn new(receiver :mpsc::Receiver<InternalTrade>, redis_url: String) -> Self {
+
+        let mut channels = HashMap::new();
+
+        channels.insert(MarketId::BtcUsdt, "trades:btcusdt");
+        channels.insert(MarketId::EthUsdt, "trades:ethusdt");
+
         Self { 
             receiver,
-            redis_url 
+            redis_url,
+            channels
         }
     }
 
@@ -57,7 +67,7 @@ impl RedisPublisher {
 
             // 3. publish to redis channel 
             // we use the market_id to craete a dynamic channel name
-            let channel = format!("trades:{:?}", internal_trade.market).to_lowercase();
+            let channel = self.channels.get(&internal_trade.market).expect("No such channel available");
             batch.push((channel, payload));
             
             // 3. TRIGGER FLUSH: If batch is full OR the channel is currently empty
