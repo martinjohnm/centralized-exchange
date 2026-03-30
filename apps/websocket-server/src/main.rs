@@ -33,7 +33,13 @@ async fn main() {
 
         pubsub.subscribe("trades:btcusdt").await.expect("trades:btcusdt connection failed");
 
-        
+        let mut stream = pubsub.on_message();
+
+        while let Some(msg) = stream.next().await {
+            let payload: Vec<u8> = msg.get_payload().expect("Payload error");
+
+            let _ = redis_tx.send(payload);
+        }
 
     });
 
@@ -68,12 +74,11 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
     let mut heartbeat_interval = tokio::time::interval(tokio::time::Duration::from_secs(10));
     // Test loop
     
-    println!("{:?}", 34);
+    
     loop {
         tokio::select! {
             // Receive trade from the broadcast channel
             Ok(bytes) = rx.recv() => {
-
 
                 if socket.send(Message::Binary(bytes.into())).await.is_err() {
                     break; 
