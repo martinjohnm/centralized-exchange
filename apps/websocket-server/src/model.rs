@@ -13,14 +13,16 @@ pub mod exchange_proto {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InternalTrade {
     pub price : f64,
-    pub quantity : f64
+    pub quantity : f64,
+    pub timestamp : u64
 }
 
 impl InternalTrade {
     pub fn from_proto(proto : Trade) -> Self {
         Self { 
             price: proto.price.parse::<f64>().unwrap_or(0.0), 
-            quantity: proto.quantity.parse::<f64>().unwrap_or(0.0)
+            quantity: proto.quantity.parse::<f64>().unwrap_or(0.0),
+            timestamp : proto.timestamp
         }
     }
 }

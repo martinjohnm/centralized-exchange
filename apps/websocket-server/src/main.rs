@@ -70,7 +70,7 @@ async fn main() {
                 Ok(proto_trade) => {
                     // Convert to your internal Decimal/f64 struct for math
                     let internal = InternalTrade::from_proto(proto_trade);
-                    current_candle.update(internal.price, internal.quantity);
+                    current_candle.update(internal.price, internal.quantity, internal.timestamp);
                     println!("Current candle {:?}", current_candle);
                 }
                 Err(e) => {

@@ -9,14 +9,14 @@ pub struct Candle {
     pub low  : f64,
     pub close: f64,
     pub volume: f64,
-    pub timestamp : f64
+    pub timestamp : u64
 }
 
 impl Candle {
 
     // this is called when a new trade comes 
 
-    pub fn update(&mut self, price: f64, qty: f64) {
+    pub fn update(&mut self, price: f64, qty: f64, timestamp : u64) {
         // the default case 
         if self.open == 0.0 { self.open = price; self.high = price; self.low = price; }
 
@@ -29,5 +29,6 @@ impl Candle {
         
         // increase volume by incresing the quantity
         // self.volume += qty;
+        self.timestamp = timestamp;
     }
 }
