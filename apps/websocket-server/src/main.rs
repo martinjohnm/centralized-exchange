@@ -64,6 +64,9 @@ async fn main() {
         let mut internal_rx = agg_rx;
         let mut current_candle = Candle::default();
 
+        // The pulse : Fires every 1000 ms
+        let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(1));
+
         while let Some(payload) = internal_rx.recv().await {
             // Now that 'Message' is in scope, .decode() will be found
             match Trade::decode(&payload[..]) {
