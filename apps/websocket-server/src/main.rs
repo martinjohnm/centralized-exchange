@@ -4,6 +4,8 @@ use axum::{Router, extract::{State, WebSocketUpgrade, ws::{Message, WebSocket}},
 use futures_util::StreamExt;
 use tokio::sync::broadcast;
 
+use crate::candle::Candle;
+
 
 
 mod model;
@@ -18,8 +20,14 @@ struct AppState {
 async fn main() {
 
     // 2. create a broadcast channel 
-    let (tx, _rx) = broadcast::channel::<Vec<u8>>(1024);
-    let state = Arc::new(AppState { tx });
+    let (broadcast_tx, _rx) = broadcast::channel::<Vec<u8>>(1024);
+
+
+    // internal channel : Redis pub sub -> Aggregator
+    let (agg_tx, agg_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(10000);
+
+
+    let state = Arc::new(AppState { tx : broadcast_tx.clone() });
     // 3. spawn a background green thread for redis litening incoming messages
     let redis_tx = state.tx.clone();
 
@@ -38,10 +46,22 @@ async fn main() {
         while let Some(msg) = stream.next().await {
             let payload: Vec<u8> = msg.get_payload().expect("Payload error");
 
-            let _ = redis_tx.send(payload);
+            let _ = agg_tx.send(payload).await;
         }
 
     });
+
+    // create another green thread for to implement the aggregator task
+
+    let candle_broadcast_tx = broadcast_tx.clone();
+
+    tokio::spawn(async move {
+
+        // create a default candle
+        let mut current_candle = Candle::default();
+
+    });
+
 
     // 1. simple Axum router
     let app = Router::new()

@@ -1,5 +1,8 @@
+use serde::Serialize;
 
 
+
+#[derive(Default, Clone, Serialize)]
 pub struct Candle {
     pub open : f64,
     pub high : f64,
