@@ -19,8 +19,8 @@ pub struct InternalTrade {
 impl InternalTrade {
     pub fn from_proto(proto : Trade) -> Self {
         Self { 
-            price: 34.2, 
-            quantity: 100.2 
+            price: proto.price.parse::<f64>().unwrap_or(0.0), 
+            quantity: proto.quantity.parse::<f64>().unwrap_or(0.0)
         }
     }
 }

@@ -58,6 +58,8 @@ async fn main() {
 
     // create another green thread for to implement the aggregator task
 
+    let candle_broadcast_tx = broadcast_tx.clone();
+    
     tokio::spawn(async move {
         let mut internal_rx = agg_rx;
         let mut current_candle = Candle::default();
@@ -66,11 +68,10 @@ async fn main() {
             // Now that 'Message' is in scope, .decode() will be found
             match Trade::decode(&payload[..]) {
                 Ok(proto_trade) => {
-                    // // Convert to your internal Decimal/f64 struct for math
-                    // let internal = InternalTrade::from_proto(proto_trade);
-                    // current_candle.update(internal.price, internal.quantity);
-                    // println!("✅ Aggregated trade at price: {}", internal.price);
-                    println!("{:?}", proto_trade);
+                    // Convert to your internal Decimal/f64 struct for math
+                    let internal = InternalTrade::from_proto(proto_trade);
+                    current_candle.update(internal.price, internal.quantity);
+                    println!("Aggregated trade at price: {} , quan : {}", internal.price, internal.quantity);
                 }
                 Err(e) => {
                     eprintln!("❌ Protobuf decode error: {:?}", e);
