@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
-use axum::{Router, extract::{State, WebSocketUpgrade, ws::{Message, WebSocket}}, response::Response, routing::get};
+use axum::{Router, extract::{State, WebSocketUpgrade, ws::{Message as WsMessage, WebSocket}}, response::Response, routing::get};
 use futures_util::StreamExt;
+use prost::Message as ProtoMessage;
 use tokio::sync::broadcast;
 
 use crate::{candle::Candle, model::{InternalTrade, exchange_proto::Trade}};
@@ -62,8 +63,19 @@ async fn main() {
         let mut current_candle = Candle::default();
 
         while let Some(payload) = internal_rx.recv().await {
-            
-            println!("{:?}", payload);
+            // Now that 'Message' is in scope, .decode() will be found
+            match Trade::decode(&payload[..]) {
+                Ok(proto_trade) => {
+                    // // Convert to your internal Decimal/f64 struct for math
+                    // let internal = InternalTrade::from_proto(proto_trade);
+                    // current_candle.update(internal.price, internal.quantity);
+                    // println!("✅ Aggregated trade at price: {}", internal.price);
+                    println!("{:?}", proto_trade);
+                }
+                Err(e) => {
+                    eprintln!("❌ Protobuf decode error: {:?}", e);
+                }
+            }
         }
         
     });
@@ -110,7 +122,7 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
             res = rx.recv() => {
                 match res {
                     Ok(bytes) => {
-                        if socket.send(Message::Binary(bytes.into())).await.is_err() {
+                        if socket.send(WsMessage::Binary(bytes.into())).await.is_err() {
                             println!("🔌 Client disconnected");
                             break; 
                         }
@@ -125,7 +137,7 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
             }
             
             _ = heartbeat_interval.tick() => {
-                if socket.send(Message::Ping(vec![].into())).await.is_err() {
+                if socket.send(WsMessage::Ping(vec![].into())).await.is_err() {
                     break;
                 }
             }
