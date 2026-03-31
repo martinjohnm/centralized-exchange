@@ -116,6 +116,8 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
     let mut heartbeat_interval = tokio::time::interval(tokio::time::Duration::from_secs(10));
     // Test loop
     
+    let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(1));
+    
     
     loop {
         tokio::select! {
