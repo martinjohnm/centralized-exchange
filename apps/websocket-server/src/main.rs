@@ -4,7 +4,8 @@ use axum::{Router, extract::{State, WebSocketUpgrade, ws::{Message, WebSocket}},
 use futures_util::StreamExt;
 use tokio::sync::broadcast;
 
-use crate::candle::Candle;
+use crate::{candle::Candle, model::{InternalTrade, exchange_proto::Trade}};
+
 
 
 
@@ -46,20 +47,25 @@ async fn main() {
         while let Some(msg) = stream.next().await {
             let payload: Vec<u8> = msg.get_payload().expect("Payload error");
 
-            let _ = agg_tx.send(payload).await;
+            if let Err(e) = agg_tx.send(payload).await {
+                eprintln!("Aggregator channel closed:{}", e);
+                break;
+            }
         }
 
     });
 
     // create another green thread for to implement the aggregator task
 
-    let candle_broadcast_tx = broadcast_tx.clone();
-
     tokio::spawn(async move {
-
-        // create a default candle
+        let mut internal_rx = agg_rx;
         let mut current_candle = Candle::default();
 
+        while let Some(payload) = internal_rx.recv().await {
+            
+            println!("{:?}", payload);
+        }
+        
     });
 
 
