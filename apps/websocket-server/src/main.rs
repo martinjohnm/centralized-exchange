@@ -9,7 +9,7 @@ use tokio::sync::broadcast;
 mod model;
 mod state;
 mod handler;
-
+mod candle;
 struct AppState {
     tx : broadcast::Sender<Vec<u8>>
 }
