@@ -55,7 +55,10 @@ async fn main() {
 
     println!("Axum websocket listening on 8080");
 
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
 }
 
 async fn handler(
@@ -77,15 +80,24 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
     
     loop {
         tokio::select! {
-            // Receive trade from the broadcast channel
-            Ok(bytes) = rx.recv() => {
-
-                if socket.send(Message::Binary(bytes.into())).await.is_err() {
-                    break; 
+            // 🚀 Capture the result of the receive
+            res = rx.recv() => {
+                match res {
+                    Ok(bytes) => {
+                        if socket.send(Message::Binary(bytes.into())).await.is_err() {
+                            println!("🔌 Client disconnected");
+                            break; 
+                        }
+                    }
+                    // ⚠️ This happens if the engine is too fast for the websocket
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                        eprintln!("⚠️ Client lagged by {} messages", n);
+                        // We don't break, but we acknowledge the lag
+                    }
+                    Err(_) => break, // Channel closed
                 }
-
             }
-            // Send Heartbeat Ping to keep connection alive
+            
             _ = heartbeat_interval.tick() => {
                 if socket.send(Message::Ping(vec![].into())).await.is_err() {
                     break;
@@ -93,4 +105,14 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
             }
         }
     }
+}
+
+// This function waits for you to press Ctrl-C
+async fn shutdown_signal() {
+    tokio::signal::ctrl_c()
+        .await
+        .expect("failed to install CTRL+C handler");
+    
+    println!("🛑 Ctrl-C received: Closing all WebSocket tasks and Redis connections...");
+    // When this returns, Axum will stop accepting new finishing current ones
 }
