@@ -71,7 +71,7 @@ async fn main() {
                     // Convert to your internal Decimal/f64 struct for math
                     let internal = InternalTrade::from_proto(proto_trade);
                     current_candle.update(internal.price, internal.quantity);
-                    println!("Aggregated trade at price: {} , quan : {}", internal.price, internal.quantity);
+                    println!("Current candle {:?}", current_candle);
                 }
                 Err(e) => {
                     eprintln!("❌ Protobuf decode error: {:?}", e);

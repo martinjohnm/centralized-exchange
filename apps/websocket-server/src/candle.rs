@@ -2,7 +2,7 @@ use serde::Serialize;
 
 
 
-#[derive(Default, Clone, Serialize)]
+#[derive(Default, Clone, Serialize, Debug)]
 pub struct Candle {
     pub open : f64,
     pub high : f64,
