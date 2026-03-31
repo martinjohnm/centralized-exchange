@@ -22,6 +22,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Starting Swarm: 200 bots @ 50 orders/sec (Goal: 10k TPS)");
 
+    let btc_market : &'static str = "trades:btc_usdt";
+
     for bot_id in 1..=200 {
         let mut bot_conn = multiplex_conn.clone();
         
@@ -52,7 +54,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // 3. Now we can await redis (The RNG is died)
 
                 let _: () = redis::cmd("LPUSH")
-                    .arg("trades:btc_usdt")
+                    .arg(btc_market)
                     .arg(payload)
                     .query_async(&mut bot_conn)
                     .await
