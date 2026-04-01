@@ -26,3 +26,13 @@ impl InternalTrade {
         }
     }
 }
+
+// In model.rs
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+#[serde(tag = "method", content = "params", rename_all = "lowercase")]
+pub enum WsRequest {
+    Subscribe { market: String },
+    Unsubscribe { market: String },
+}

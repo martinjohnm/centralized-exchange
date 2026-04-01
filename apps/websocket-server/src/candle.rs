@@ -28,7 +28,7 @@ impl Candle {
         self.close = price;
         
         // increase volume by incresing the quantity
-        // self.volume += qty;
+        self.volume += qty;
         self.timestamp = timestamp;
     }
 }
