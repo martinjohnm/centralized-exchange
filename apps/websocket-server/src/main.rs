@@ -24,18 +24,17 @@ async fn main() {
     // 2. create a broadcast channel 
     let (broadcast_tx, _rx) = broadcast::channel::<Vec<u8>>(1024);
 
-
     // internal channel : Redis pub sub -> Aggregator
     let (agg_tx, agg_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(10000);
 
-
     let state = Arc::new(AppState { tx : broadcast_tx.clone() });
-    // 3. spawn a background green thread for redis litening incoming messages
-    let redis_tx = state.tx.clone();
+    
+
+    // Prolly do for all markets here did for only btc_usdt 
+    // using config and all markets will do later!!!
 
     tokio::spawn(async move {
         let client = redis::Client::open("redis://127.0.0.1:6379/").expect("Redis connection failed");
-        let mut conn = client.get_multiplexed_async_connection().await.expect("Redis connetcon failde");
         let mut pubsub = client
             .get_async_pubsub()
             .await
@@ -66,18 +65,37 @@ async fn main() {
 
         // The pulse : Fires every 1000 ms
         let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(1));
+        const MICROS_PER_MINUTE: u64 = 60_000_000;
 
-        while let Some(payload) = internal_rx.recv().await {
-            // Now that 'Message' is in scope, .decode() will be found
-            match Trade::decode(&payload[..]) {
-                Ok(proto_trade) => {
-                    // Convert to your internal Decimal/f64 struct for math
-                    let internal = InternalTrade::from_proto(proto_trade);
-                    current_candle.update(internal.price, internal.quantity, internal.timestamp);
-                    println!("Current candle {:?}", current_candle);
+        loop {
+            tokio::select! {
+
+                // Branch for NEw trades arriving
+                Some(payload) = internal_rx.recv() => {
+                    if let Ok(proto) = Trade::decode(&payload[..]) {
+                        let trade = InternalTrade::from_proto(proto);
+                        
+                        // Minute boundary logic
+                        let bucket_ts = (trade.timestamp / MICROS_PER_MINUTE) * MICROS_PER_MINUTE;
+                        
+                        if current_candle.timestamp != 0 && bucket_ts > current_candle.timestamp {
+                            current_candle = Candle::default();
+                        }
+                        
+                        current_candle.timestamp = bucket_ts;
+                        current_candle.update(trade.price, trade.quantity, trade.timestamp);
+                        
+                    }
                 }
-                Err(e) => {
-                    eprintln!("❌ Protobuf decode error: {:?}", e);
+
+                // Branch for 1 second clock tick
+                _ = ticker.tick() => {
+                    if current_candle.open > 0.0 {
+                        if let Ok(bytes) = serde_json::to_vec(&current_candle) {
+                            // Pushes to handle_socket's rx.recv()
+                            let _ = candle_broadcast_tx.send(bytes);
+                        }
+                    }
                 }
             }
         }
