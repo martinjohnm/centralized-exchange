@@ -5,7 +5,7 @@ use futures_util::StreamExt;
 use prost::Message as ProtoMessage;
 use tokio::sync::broadcast;
 
-use crate::{candle::Candle, handler::handle_socket, model::{InternalTrade, exchange_proto::Trade}};
+use crate::{aggregator::start_aggregator, candle::Candle, handler::handle_socket, model::{InternalTrade, exchange_proto::Trade}, redis::start_redis_listener, state::AppState};
 
 
 
@@ -15,94 +15,27 @@ mod state;
 mod handler;
 mod candle;
 mod aggregator;
-struct AppState {
-    tx : broadcast::Sender<Vec<u8>>
-}
-
+mod redis;
 #[tokio::main]
 async fn main() {
 
-    // 2. create a broadcast channel 
-    let (broadcast_tx, _rx) = broadcast::channel::<Vec<u8>>(1024);
+    // 1. state initialization
+    let state = Arc::new(AppState::new());
 
-    // internal channel : Redis pub sub -> Aggregator
-    let (agg_tx, agg_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(10000);
+    // 2. Define which markets supports
+    let markets = vec!["btcusdt".to_string(), "ethusdt".to_string()];
 
-    let state = Arc::new(AppState { tx : broadcast_tx.clone() });
-    
+    for market_symbol in markets {
 
-    // Prolly do for all markets here did for only btc_usdt 
-    // using config and all markets will do later!!!
+        let (broadcast_tx, _) = broadcast::channel(1024);
+        let (agg_tx, agg_rx) = tokio::sync::mpsc::channel(10000);
 
-    tokio::spawn(async move {
-        let client = redis::Client::open("redis://127.0.0.1:6379/").expect("Redis connection failed");
-        let mut pubsub = client
-            .get_async_pubsub()
-            .await
-            .expect("Pubsub connection failed");
+        state.market_map.write().await.insert(market_symbol.clone(), broadcast_tx.clone());
 
-        pubsub.subscribe("trades:btcusdt").await.expect("trades:btcusdt connection failed");
+        tokio::spawn(start_aggregator(agg_rx, broadcast_tx));
 
-        let mut stream = pubsub.on_message();
-
-        while let Some(msg) = stream.next().await {
-            let payload: Vec<u8> = msg.get_payload().expect("Payload error");
-
-            if let Err(e) = agg_tx.send(payload).await {
-                eprintln!("Aggregator channel closed:{}", e);
-                break;
-            }
-        }
-
-    });
-
-    // create another green thread for to implement the aggregator task
-
-    let candle_broadcast_tx = broadcast_tx.clone();
-    
-    tokio::spawn(async move {
-        let mut internal_rx = agg_rx;
-        let mut current_candle = Candle::default();
-
-        // The pulse : Fires every 1000 ms
-        let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(1));
-        const MICROS_PER_MINUTE: u64 = 60_000_000;
-
-        loop {
-            tokio::select! {
-
-                // Branch for NEw trades arriving
-                Some(payload) = internal_rx.recv() => {
-                    if let Ok(proto) = Trade::decode(&payload[..]) {
-                        let trade = InternalTrade::from_proto(proto);
-                        
-                        // Minute boundary logic
-                        let bucket_ts = (trade.timestamp / MICROS_PER_MINUTE) * MICROS_PER_MINUTE;
-                        
-                        if current_candle.timestamp != 0 && bucket_ts > current_candle.timestamp {
-                            current_candle = Candle::default();
-                        }
-                        
-                        current_candle.timestamp = bucket_ts;
-                        current_candle.update(trade.price, trade.quantity, trade.timestamp);
-                        
-                    }
-                }
-
-                // Branch for 1 second clock tick
-                _ = ticker.tick() => {
-                    if current_candle.open > 0.0 {
-                        if let Ok(bytes) = serde_json::to_vec(&current_candle) {
-                            // Pushes to handle_socket's rx.recv()
-                            let _ = candle_broadcast_tx.send(bytes);
-                        }
-                    }
-                }
-            }
-        }
-        
-    });
-
+        tokio::spawn(start_redis_listener(market_symbol, agg_tx));
+    }
 
     // 1. simple Axum router
     let app = Router::new()

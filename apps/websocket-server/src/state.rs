@@ -10,6 +10,12 @@ pub struct AppState {
 }
 
 impl AppState {
+    pub fn new() -> Self {
+        Self {
+            market_map: RwLock::new(HashMap::new()),
+        }
+    }
+
     pub async fn get_tx(&self, market: &str) -> Option<broadcast::Sender<Vec<u8>>> {
         let map = self.market_map.read().await;
         map.get(market).cloned()
