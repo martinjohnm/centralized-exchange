@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
-use axum::{Router, extract::{State, WebSocketUpgrade, ws::{Message as WsMessage, WebSocket}}, response::Response, routing::get};
-use futures_util::StreamExt;
-use prost::Message as ProtoMessage;
+use axum::{Router, extract::{State, WebSocketUpgrade}, response::Response, routing::get};
+
 use tokio::sync::broadcast;
 
-use crate::{aggregator::start_aggregator, candle::Candle, handler::handle_socket, model::{InternalTrade, exchange_proto::Trade}, redis::start_redis_listener, state::AppState};
+use crate::{aggregator::start_aggregator, handler::handle_socket, redis::start_redis_listener, state::AppState};
 
 
 

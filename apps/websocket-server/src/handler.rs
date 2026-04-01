@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use tokio::sync::broadcast;
 use tokio_stream::{StreamExt, StreamMap, wrappers::BroadcastStream};
 use crate::{ model::WsRequest, state::AppState};
 use axum::{extract::{ws::{Message as WsMessage, WebSocket}}};
