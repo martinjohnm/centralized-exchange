@@ -14,6 +14,7 @@ mod model;
 mod state;
 mod handler;
 mod candle;
+mod aggregator;
 struct AppState {
     tx : broadcast::Sender<Vec<u8>>
 }
