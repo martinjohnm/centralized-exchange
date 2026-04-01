@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 interface Candle {
   open: number;
@@ -14,22 +14,58 @@ function App() {
   const WS_URL = import.meta.env.VITE_WS_URL || "ws://127.0.0.1:8080/ws";
   const [newCandle, setNewCandle] = useState<Candle | null>(null);
 
+    // 1. Use a Ref to keep the socket instance across re-renders
+  const socketRef = useRef<WebSocket | null>(null);
+
+  const subscribe = (market: string) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      const msg = {
+        method : "subscribe",
+        params : {
+          market
+        }
+      };
+
+      socketRef.current.send(JSON.stringify(msg));
+
+      
+    }
+  }
+  // // 3. The "Unsubscribe" Helper
+  //   const unsubscribe = (market: string) => {
+  //     if (socketRef.current?.readyState === WebSocket.OPEN) {
+  //       const msg = {
+  //         method: "unsubscribe",
+  //         params: { market }
+  //       };
+  //       socketRef.current.send(JSON.stringify(msg));
+        
+
+  //     }
+  //   };
+
   useEffect(() => {
-    const socket = new WebSocket(WS_URL)
+    const ws = new WebSocket(WS_URL)
+    socketRef.current = ws
 
-    socket.onmessage = async (event) => {
-      try {
-        const text = await event.data.text();
-        const data = JSON.parse(text);
-        setNewCandle(data);
-      } catch (err) {
-        console.error("Error:", err);
-      }
-    };
+    ws.onopen = () => {
+      subscribe("btcusdt");
+    }
 
-    return () => socket.close();
+    ws.onmessage = async (event) => {
+      const text = await event.data.text()
+      const data = JSON.parse(text);
+
+      setNewCandle(data)
+    }
+
+    return () => ws.close();
 
   }, [WS_URL])
+
+
+  
+
 
   // Prevent "Cannot read properties of null" error
   if (!newCandle) {
