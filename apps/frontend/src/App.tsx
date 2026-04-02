@@ -49,7 +49,7 @@ function App() {
     socketRef.current = ws
 
     ws.onopen = () => {
-      subscribe("btcusdt");
+      subscribe("btcusdt:5m");
     }
 
     ws.onmessage = async (event) => {

@@ -6,19 +6,19 @@ use prost::Message as ProtoMessage;
 
 
 pub async fn start_aggregator(
+    interval: (&str, u64),
     mut internal_rx : tokio::sync::mpsc::Receiver<Vec<u8>>,
     broadcast_tx: broadcast::Sender<Vec<u8>>
 ) {
     let mut current_candle  = Candle::default();
     let mut tiker = tokio::time::interval(tokio::time::Duration::from_secs(1));
-    const MICROS_PER_MINUTE : u64 = 60_000_000;
     
     loop {
         tokio::select! {
             Some(payload) = internal_rx.recv() => {
                 if let Ok(proto) = Trade::decode(&payload[..]) {
                     let trade = InternalTrade::from_proto(proto);
-                    let bucket_ts = (trade.timestamp / MICROS_PER_MINUTE) * MICROS_PER_MINUTE;
+                    let bucket_ts = (trade.timestamp / interval.1) * interval.1;
 
                     if current_candle.timestamp != 0 && bucket_ts > current_candle.timestamp {
                         current_candle = Candle::default();

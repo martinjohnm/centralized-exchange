@@ -24,18 +24,42 @@ async fn main() {
     // 2. Define which markets supports
     let markets = vec!["btcusdt".to_string(), "ethusdt".to_string()];
 
-    let intervals = vec![("1m", 60_000_000), ("5m", 300_000_000), ("15m", 900_000_000)];
+    let intervals = vec![("1m", 60_000_000 as u64), ("5m", 300_000_000 as u64), ("15m", 900_000_000 as u64)];
 
     for market_symbol in markets {
 
-        let (broadcast_tx, _) = broadcast::channel(1024);
-        let (agg_tx, agg_rx) = tokio::sync::mpsc::channel(10000);
+            // 1. The Main Ingress from Redis
+        let (redis_tx, mut redis_rx) = tokio::sync::mpsc::channel::<Vec<u8>>(10000);
+        
+        // 2. A list to keep track of all timeframe senders for this market
+        let mut timeframe_senders = Vec::new();
 
-        state.market_map.write().await.insert(market_symbol.clone(), broadcast_tx.clone());
+        for interval in &intervals {
+            let room_id = format!("{}:{}", market_symbol, interval.0);
+            let (broadcast_tx,_) = broadcast::channel(1024);
+            let (agg_tx, agg_rx) = tokio::sync::mpsc::channel(10000);
 
-        tokio::spawn(start_aggregator(agg_rx, broadcast_tx));
+            // Save the broadcast sender so that the websocket cand find the "room"
+            state.market_map.write().await.insert(room_id, broadcast_tx.clone());
 
-        tokio::spawn(start_redis_listener(market_symbol, agg_tx));
+            // spawn the specific aggregator for this timeframe
+            tokio::spawn(start_aggregator(interval.clone(), agg_rx, broadcast_tx));
+            timeframe_senders.push(agg_tx);
+        }
+        
+
+        // Distributor task
+        // takes 1 trade from redis and send it to 1m 5m and 15m aggregators
+        tokio::spawn(async move {
+            while let Some(payload) = redis_rx.recv().await {
+                for tx in &timeframe_senders {
+                    let _ = tx.send(payload.clone()).await;
+                }
+            }
+        });
+
+        // start the redis listenre for this market
+        tokio::spawn(start_redis_listener(market_symbol, redis_tx));
     }
 
     // 1. simple Axum router
