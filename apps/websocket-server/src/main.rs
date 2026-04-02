@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, vec};
 
 use axum::{Router, extract::{State, WebSocketUpgrade}, response::Response, routing::get};
 
@@ -23,6 +23,8 @@ async fn main() {
 
     // 2. Define which markets supports
     let markets = vec!["btcusdt".to_string(), "ethusdt".to_string()];
+
+    let intervals = vec![("1m", 60_000_000), ("5m", 300_000_000), ("15m", 900_000_000)];
 
     for market_symbol in markets {
 
