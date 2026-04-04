@@ -3,6 +3,7 @@ use redis::Commands;
 use std::time::{Instant, Duration};
 use std::env;
 use std::thread;
+use dotenvy::dotenv;
 
 pub mod exchange_proto {
     include!(concat!(env!("OUT_DIR"), "/exchange.rs"));
@@ -37,9 +38,13 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let target_ops: f64 = args.get(1)
         .and_then(|s| s.parse().ok())
-        .unwrap_or(2000.0);
+        .unwrap_or(10000.0);
 
-    let client = redis::Client::open("redis://127.0.0.1:6379").expect("Invalid Redis URL");
+    let redis_url = env::var("REDIS_URL")
+        .expect("REDIS_URL must be set in .env or system environment");
+
+
+    let client = redis::Client::open(redis_url).expect("Invalid Redis URL");
     let mut con = client.get_connection().expect("Failed to connect to Redis");
     let queue_key: &'static str = "trades:btc_usdt";
 

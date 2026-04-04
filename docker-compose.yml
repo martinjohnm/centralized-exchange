@@ -1,18 +1,68 @@
+
 services:
-  redis-master:
+  # 1. The Matching Engine
+  engine:
+    build:
+      context: .
+      args:
+        - APP_NAME=engine  # This tells the Dockerfile WHICH binary to build
+    container_name: ex_engine
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy # This is the magic line
+
+  # 2. The Strategy/Order Placer
+  order-firer:
+    build:
+      context: .
+      args:
+        - APP_NAME=fire_orders # Builds the fire_orders binary specifically
+    container_name: ex_firer
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy # This is the magic line
+      engine:
+        condition: service_started  # Waits for the Engine container to start
+
+  # 3. The WebSocket Gateway
+  websocket-server:
+    build:
+      context: .
+      args:
+        - APP_NAME=websocket-server
+    container_name: ex_ws
+    ports:
+      - "8080:8080"
+    environment:
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy # This is the magic line
+
+  # 4. Redis
+  redis:
     image: redis:7-alpine
-    container_name: redis-xtreme
-    # CRITICAL: Bypasses the Docker Virtual Bridge to solve the 1,100 TPS wall
-    network_mode: "host" 
-    restart: always
-    # Optimized for high-speed matching engine testing (No Disk I/O)
-    command: >
-      redis-server 
-      --save "" 
-      --appendonly no 
-      --tcp-keepalive 300
+    container_name: ex_redis
+    ports:
+      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      interval: 1s
       timeout: 3s
-      retries: 5
+      retries: 30
+  # 5. The TypeScript Frontend
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    container_name: ex_frontend
+    ports:
+      - "3000:80"  # Access your UI at http://localhost:3000
+    depends_on:
+      - websocket-server
+    environment:
+      - VITE_WS_URL=ws://localhost:8080 # Inject the WS URL for the client browser

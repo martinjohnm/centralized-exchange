@@ -9,12 +9,17 @@ mod publisher;
 use tokio::sync::mpsc;
 use crate::{model::InternalTrade, publisher::RedisPublisher, utils::{MarketConfig, load_markets_from_proto}, worker::Worker};
 use std::thread;
+use dotenvy::dotenv;
+use std::env;
 
 #[tokio::main]
 async fn main() {
     // 1. Load configuration once at the top level
     let markets = load_markets_from_proto();
-    let redis_url = "redis://127.0.0.1:6379";
+    println!("DEBUG: Current REDIS_URL is: {:?}", std::env::var("REDIS_URL"));
+    let redis_url = env::var("REDIS_URL")
+        .expect("REDIS_URL must be set in .env or system environment");
+    println!("{:?}", redis_url);
 
     println!("Starting Exchange Engine...");
 

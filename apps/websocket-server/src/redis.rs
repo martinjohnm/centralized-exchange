@@ -1,11 +1,17 @@
 use futures_util::StreamExt;
+use dotenvy::dotenv;
+use std::env;
+
 
 pub async fn start_redis_listener(
     market: String, 
     agg_tx: tokio::sync::mpsc::Sender<Vec<u8>>
 ) {
+    let redis_url = env::var("REDIS_URL")
+        .expect("REDIS_URL must be set in .env or system environment");
+    println!("{:?}", redis_url);
     // 1. Establish connection
-    let client = redis::Client::open("redis://127.0.0.1:6379/")
+    let client = redis::Client::open(redis_url)
         .expect("Failed to create Redis client");
         
     let mut pubsub = client
