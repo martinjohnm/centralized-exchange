@@ -26,3 +26,9 @@ The project uses template files to manage service coordinates. Copy the examples
 ```bash
 # From the project root:
 cp .env.example .env && cp apps/frontend/.env.example apps/frontend/.env
+```
+### 2. Build and Start (The "One-Command" Setup)
+This command triggers the Cargo workspace compilation, the Vite production build, and initializes the Redis backplane in a single pass:
+docker compose up --build
+### 3. Run 
+docker compose up
