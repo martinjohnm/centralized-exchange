@@ -12,7 +12,7 @@ interface Candle {
 function App() {
 
 // apps/frontend/src/config.ts
-const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080";  
+const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws";  
 const [newCandle, setNewCandle] = useState<Candle | null>(null);
 
     // 1. Use a Ref to keep the socket instance across re-renders

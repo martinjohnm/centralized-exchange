@@ -65,4 +65,4 @@ services:
     depends_on:
       - websocket-server
     environment:
-      - VITE_WS_URL=ws://localhost:8080 # Inject the WS URL for the client browser
+      - VITE_WS_URL=ws://localhost:8080/ws # Inject the WS URL for the client browser
