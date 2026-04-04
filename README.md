@@ -29,6 +29,11 @@ cp .env.example .env && cp apps/frontend/.env.example apps/frontend/.env
 ```
 ### 2. Build and Start (The "One-Command" Setup)
 This command triggers the Cargo workspace compilation, the Vite production build, and initializes the Redis backplane in a single pass:
-docker compose up --build
+
+```bash 
+# docker compose up --build
+```
 ### 3. Run 
+```bash
 docker compose up
+```
