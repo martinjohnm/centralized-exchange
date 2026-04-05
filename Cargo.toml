@@ -1,5 +1,5 @@
 [workspace]
-members = [
+members = ["apps/db",
     "apps/engine"     # Path to Rust matching engine
 , "apps/websocket-server"]
 resolver = "2"

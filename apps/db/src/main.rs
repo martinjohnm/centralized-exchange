@@ -1,0 +1,19 @@
+use sqlx::postgres::PgPoolOptions;
+// Simplified logic: Listen to Redis Trades -> Insert into TimescaleDB
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+
+    // 1. Connect to TimescaleDB
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url).await?;
+
+    println!("✅ Connected to TimescaleDB");
+
+    // 2. Connect to Redis and "Drain" trade events into the DB
+    // (Your logic here: redis-rs subscribe to "TRADE_EVENTS")
+    
+    Ok(())
+}
