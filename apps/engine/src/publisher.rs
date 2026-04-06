@@ -12,7 +12,8 @@ use crate::model::{InternalTrade, exchange_proto::{MarketId, Trade}};
 pub struct RedisPublisher {
     pub receiver : mpsc::Receiver<InternalTrade>,
     pub redis_url : String,
-    pub channels : HashMap<MarketId , &'static str>
+    pub channels : HashMap<MarketId , &'static str>,
+    pub db_queue : &'static str
 }
 
 impl RedisPublisher {
@@ -22,11 +23,11 @@ impl RedisPublisher {
 
         channels.insert(MarketId::BtcUsdt, "trades:btcusdt");
         channels.insert(MarketId::EthUsdt, "trades:ethusdt");
-
         Self { 
             receiver,
             redis_url,
-            channels
+            channels,
+            db_queue : "db_processor"
         }
     }
 
@@ -76,20 +77,19 @@ impl RedisPublisher {
                 let mut pipe = redis::pipe();
                 
                 for (chan, data) in batch.drain(..) {
-                    pipe.publish(chan, data);
+                    // Broadcast (Pub/Sub) for Websocket and frontend (Live market data)
+                    pipe.publish(chan, data.clone());
+
+                    // Persist (List/Queue): For the DB worker
+                    // We use Lpush to put it into the db_processor queue
+                    pipe.lpush(self.db_queue, data); 
+
                 }
 
                 // Execute the whole batch in ONE network round-trip
                 let _: redis::RedisResult<()> = pipe.query_async(&mut conn).await;
             }
             
-            // let result: redis::RedisResult<i32> = conn.publish(&channel, payload).await;
-            // let _: () = match result {
-            //     Ok(count) => {
-            //         // track the listeners
-            //     },
-            //     Err(e) => eprintln!("Redis publish error: {}", e)
-            // };
         }
     }
 }
