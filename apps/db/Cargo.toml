@@ -7,3 +7,7 @@ edition = "2024"
 tokio = { version = "*", features = ["full"]}
 sqlx = { version = "*", features = [ "runtime-tokio-native-tls", "postgres", "macros", "chrono" ] }
 chrono = { version = "*", features = ["serde"] }
+prost = "0.14.3"
+
+[build-dependencies]
+prost-build = "0.14.3"
