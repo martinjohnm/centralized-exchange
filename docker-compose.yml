@@ -75,7 +75,7 @@ services:
       context: .
       args:
         - APP_NAME=db 
-    container_name: ex_db_worker
+    
     environment:
       - DATABASE_URL=postgres://admin:password@timescaledb:5432/exchange
       - REDIS_URL=redis://redis:6379

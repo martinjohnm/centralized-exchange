@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("DB worker online: Connected to redis and timescaledb");
 
     // ------------------------------BATCHING CONFIG---------------------
-    let mut trade_buffer = Vec::with_capacity(100);
+    let mut trade_buffer = Vec::with_capacity(1000);
     let mut last_flush = Instant::now();
     let max_batch_size = 100;
     let max_wait_time = Duration::from_millis(10);
@@ -50,7 +50,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Trigger batch write
         if !trade_buffer.is_empty() && trade_buffer.len() >= max_batch_size || last_flush.elapsed() >= max_wait_time {
-            println!("flushing {} trades into timescaledb", trade_buffer.len());
+            // println!("flushing {} trades into timescaledb", trade_buffer.len());
             trade_buffer.drain(..);
         }
     }
