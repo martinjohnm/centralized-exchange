@@ -1,3 +1,4 @@
+use redis::AsyncCommands;
 use sqlx::postgres::PgPoolOptions;
 // Simplified logic: Listen to Redis Trades -> Insert into TimescaleDB
 
@@ -11,16 +12,21 @@ pub mod exchange_proto {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+    let db_queue : &'static str = "db_processor";
 
     // 1. Connect to TimescaleDB
     let pool = PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(10)
         .connect(&db_url).await?;
 
-    println!("✅ Connected to TimescaleDB");
+    let client = redis::Client::open(redis_url)?;
+    let mut conn = client.get_multiplexed_async_connection().await?;
+    println!("DB worker online: Connected to redis and timescaledb");
 
-    // 2. Connect to Redis and "Drain" trade events into the DB
-    // (Your logic here: redis-rs subscribe to "TRADE_EVENTS")
+    loop {
+        let raw_data:Option<Vec<u8>> = conn.rpop(db_queue, None).await?;
+        println!("{:?}", raw_data);
+    }
     
     Ok(())
 }
