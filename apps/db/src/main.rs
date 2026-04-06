@@ -1,3 +1,6 @@
+use std::time::{Duration, Instant};
+
+use prost::Message;
 use redis::AsyncCommands;
 use sqlx::postgres::PgPoolOptions;
 // Simplified logic: Listen to Redis Trades -> Insert into TimescaleDB
@@ -23,9 +26,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut conn = client.get_multiplexed_async_connection().await?;
     println!("DB worker online: Connected to redis and timescaledb");
 
+    // ------------------------------BATCHING CONFIG---------------------
+    let mut trade_buffer = Vec::with_capacity(100);
+    let mut last_flush = Instant::now();
+    let max_batch_size = 100;
+    let max_wait_time = Duration::from_millis(10);
+
+
     loop {
+        // pull the binary from the redis queue
         let raw_data:Option<Vec<u8>> = conn.rpop(db_queue, None).await?;
-        println!("{:?}", raw_data);
+
+        if let Some(bytes) = raw_data {
+            // Decode the Protobuf bytes into the Rust struct
+            if let Ok(trade) = exchange_proto::Trade::decode(&bytes[..]) {
+                trade_buffer.push(trade);
+            }
+        } else {
+            // If the queue is empty sleep for 10 ms to avoid the 100% cpu usage
+            tokio::time::sleep(Duration::from_millis(10)).await;
+
+        }
+
+        // Trigger batch write
+        if !trade_buffer.is_empty() && trade_buffer.len() >= max_batch_size || last_flush.elapsed() >= max_wait_time {
+            println!("flushing {} trades into timescaledb", trade_buffer.len());
+            trade_buffer.drain(..);
+        }
     }
     
     Ok(())
