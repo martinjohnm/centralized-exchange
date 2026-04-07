@@ -1,4 +1,5 @@
 
+-- sqlx-no-tx
 
 -- 1. User Table (Core Identity)--
 CREATE TABLE IF NOT EXISTS users (
@@ -53,7 +54,8 @@ SELECT
     last(price, time) AS close,
     sum(volume) AS volume
 FROM trade_history
-GROUP BY bucket, symbol;
+GROUP BY bucket, symbol
+WITH NO DATA;
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS klines_5m 
 WITH (timescaledb.continuous) AS
@@ -66,7 +68,8 @@ SELECT
     last(price, time) AS close,
     sum(volume) AS volume
 FROM trade_history
-GROUP BY bucket, symbol;
+GROUP BY bucket, symbol
+WITH NO DATA;
 
 CREATE MATERIALIZED VIEW IF NOT EXISTS klines_15m 
 WITH (timescaledb.continuous) AS
@@ -79,7 +82,8 @@ SELECT
     last(price, time) AS close,
     sum(volume) AS volume
 FROM trade_history
-GROUP BY bucket, symbol;
+GROUP BY bucket, symbol
+WITH NO DATA;
 
 
 --- 6. Automation Policies (The "Set and Forget") ---
