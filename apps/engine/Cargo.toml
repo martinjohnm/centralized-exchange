@@ -13,5 +13,6 @@ prost = "0.14.3"
 rand = { version = "0.8", features = ["small_rng"] }
 tokio = {version = "1.50.0", features = ["full"]}
 dotenvy = "0.15"
+dashmap = "6.1.0"
 [build-dependencies]
 prost-build = "0.14.3"
