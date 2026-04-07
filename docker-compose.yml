@@ -45,7 +45,21 @@ services:
     depends_on:
       redis:
         condition: service_healthy # This is the magic line
-
+  api-server:
+    build:
+      context: .
+      args:
+        - PKG_NAME=api-server
+        - BIN_NAME=api-server
+    container_name: ex_api
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://admin:password@timescaledb:5432/exchange
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      
   # 4. Redis
   redis:
     image: redis:7-alpine
@@ -96,9 +110,10 @@ services:
       dockerfile: Dockerfile
     container_name: ex_frontend
     ports:
-      - "3000:80"  # Access your UI at http://localhost:3000
+      - "5173:80"  # Access your UI at http://localhost:3000
     depends_on:
       - websocket-server
+      - api-server
     environment:
       - VITE_WS_URL=ws://localhost:8080/ws # Inject the WS URL for the client browser
 
