@@ -3,18 +3,17 @@ use std::collections::HashMap;
 use rust_decimal::Decimal;
 
 use crate::model::{Asset, LedgerError, UserId};
-use dashmap::DashMap;
 
 pub struct Ledger {
     // Key : user_id
     // Value: A map of asset symbols (eg : "BTC") to their sepcific account
-    pub accounts : DashMap<UserId, HashMap<Asset, Account>>
+    pub accounts : HashMap<UserId, HashMap<Asset, Account>>
 }
 
 impl Ledger {
     pub fn new () -> Self {
         Self {
-            accounts : DashMap::new()
+            accounts : HashMap::new()
         }
     }
 

@@ -21,7 +21,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pool = PgPoolOptions::new()
         .max_connections(10)
         .connect(&db_url).await?;
-
+    // RUN migrations on startup
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await?;
     let client = redis::Client::open(redis_url)?;
     let mut conn = client.get_multiplexed_async_connection().await?;
     println!("DB worker online: Connected to redis and timescaledb");

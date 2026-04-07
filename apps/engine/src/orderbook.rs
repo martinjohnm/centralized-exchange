@@ -402,7 +402,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -430,7 +430,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -457,7 +457,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -500,7 +500,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -538,7 +538,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -585,7 +585,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -607,7 +607,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -635,7 +635,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -700,7 +700,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -747,7 +747,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -771,7 +771,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -804,7 +804,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -858,7 +858,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -909,7 +909,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
@@ -976,7 +976,7 @@ mod tests {
             market_id: MarketId::BtcUsdt,
             base_asset: AssetId::Btc,
             quote_asset: AssetId::Usdt,
-            min_order_size: Decimal,
+            min_order_size: dec!(0.001),
             redis_key: "trades:btc_usdt",
         };
         // 2. Initialize Orderbook with the test transmitter
