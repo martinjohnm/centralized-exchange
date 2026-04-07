@@ -23,7 +23,7 @@ Follow these steps to "hydrate" the environment and launch the entire stack.
 ### 1. Bootstrap Environment
 The project uses template files to manage service coordinates. Copy the examples to create your local environment manifests:
 
-# From the project root:
+#### From the project root:
 ```bash
 cp .env.example .env && cp apps/frontend/.env.example apps/frontend/.env
 ```
