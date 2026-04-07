@@ -5,7 +5,8 @@ services:
     build:
       context: .
       args:
-        - APP_NAME=engine  # This tells the Dockerfile WHICH binary to build
+        - PKG_NAME=engine
+        - BIN_NAME=engine  # This tells the Dockerfile WHICH binary to build
     container_name: ex_engine
     environment:
       - REDIS_URL=redis://redis:6379
@@ -18,7 +19,8 @@ services:
     build:
       context: .
       args:
-        - APP_NAME=fire_orders # Builds the fire_orders binary specifically
+        - PKG_NAME=engine
+        - BIN_NAME=fire_orders # Builds the fire_orders binary specifically
     container_name: ex_firer
     environment:
       - REDIS_URL=redis://redis:6379
@@ -33,7 +35,8 @@ services:
     build:
       context: .
       args:
-        - APP_NAME=websocket-server
+        - PKG_NAME=websocket-server
+        - BIN_NAME=websocket-server
     container_name: ex_ws
     ports:
       - "8080:8080"
@@ -74,7 +77,8 @@ services:
     build:
       context: .
       args:
-        - APP_NAME=db 
+        - PKG_NAME=db
+        - BIN_NAME=db 
     
     environment:
       - DATABASE_URL=postgres://admin:password@timescaledb:5432/exchange
