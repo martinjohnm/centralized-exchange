@@ -1,8 +1,10 @@
-use std::time::{Duration, Instant};
+use std::{str::FromStr, time::{Duration, Instant}};
 
+use chrono::{TimeZone, Utc};
 use prost::Message;
 use redis::AsyncCommands;
-use sqlx::postgres::PgPoolOptions;
+use rust_decimal::Decimal;
+use sqlx::{QueryBuilder, postgres::PgPoolOptions};
 // Simplified logic: Listen to Redis Trades -> Insert into TimescaleDB
 
 pub mod exchange_proto {
@@ -54,7 +56,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Trigger batch write
         if !trade_buffer.is_empty() && trade_buffer.len() >= max_batch_size || last_flush.elapsed() >= max_wait_time {
             // println!("flushing {} trades into timescaledb", trade_buffer.len());
-            trade_buffer.drain(..);
+            let mut query_builder = QueryBuilder::new(
+                "INSERT INTO trade_history (time, symbol, price, volume, taker_side)"
+            );
+
+
+            query_builder.push_values(trade_buffer.iter(), |mut b, trade| {
+                // 1. convert the timestamp (u64) to TIMESTAMPZ
+                let datetime = Utc.timestamp_micros(trade.timestamp as i64).unwrap();
+
+                // 2. parse the strings to decimal
+                let price = Decimal::from_str(&trade.price).unwrap_or(Decimal::ZERO);
+                let quantity = Decimal::from_str(&trade.quantity).unwrap_or(Decimal::ZERO);
+
+                // 3. Map enum i32 to String for the db
+                let side_str = if trade.taker_side == exchange_proto::Side::Buy as i32 { "BUY" } else { "SELL" };
+
+                // 4. construct the symbol 
+                let symbol = format!("{:?}_{:?}", trade.base, trade.quote);
+
+                b.push_bind(datetime)
+                 .push_bind(symbol)
+                 .push_bind(price)
+                 .push_bind(quantity)
+                 .push_bind(side_str);
+            });
+
+            let query = query_builder.build();
+            if let Err(e) = query.execute(&pool).await {
+                eprintln!("Database insert error : {}", e);
+
+            } else {
+                // maybe do the kilines refresh here!
+            }
+
+            trade_buffer.clear();
+            last_flush = Instant::now();
         }
     }
     

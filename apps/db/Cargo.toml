@@ -5,10 +5,12 @@ edition = "2024"
 
 [dependencies]
 tokio = { version = "*", features = ["full"]}
-sqlx = { version = "*", features = [ "runtime-tokio-native-tls", "postgres", "macros", "chrono" ] }
+sqlx = { version = "*", features = [ "runtime-tokio-native-tls", "postgres", "macros", "chrono", "rust_decimal" ] }
 chrono = { version = "*", features = ["serde"] }
 prost = "0.14.3"
 redis = {version = "*", features = ["tokio-comp", "aio"]}
+rust_decimal = "1.40.0"
+rust_decimal_macros = "1.40.0"
 
 [build-dependencies]
 prost-build = "0.14.3"
