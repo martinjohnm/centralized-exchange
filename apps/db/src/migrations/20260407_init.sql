@@ -80,3 +80,24 @@ SELECT
     sum(volume) AS volume
 FROM trade_history
 GROUP BY bucket, symbol;
+
+
+--- 6. Automation Policies (The "Set and Forget") ---
+
+-- Refresh 1m candles every minute
+SELECT add_continuous_aggregate_policy('klines_1m',
+    start_offset => INTERVAL '2 minutes',
+    end_offset => INTERVAL '0 seconds',
+    schedule_interval => INTERVAL '1 minute');
+
+-- Refresh 5m candles every 5 minutes
+SELECT add_continuous_aggregate_policy('klines_5m',
+    start_offset => INTERVAL '10 minutes',
+    end_offset => INTERVAL '0 seconds',
+    schedule_interval => INTERVAL '5 minutes');
+
+-- Refresh 15m candles every 15 minutes
+SELECT add_continuous_aggregate_policy('klines_15m',
+    start_offset => INTERVAL '30 minutes',
+    end_offset => INTERVAL '0 seconds',
+    schedule_interval => INTERVAL '15 minutes');
