@@ -1,3 +1,4 @@
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres};
 
@@ -16,6 +17,6 @@ pub struct AppState {
 pub struct SeedRequest {
     pub user_id: i32,
     pub asset: String,     // Matches your 'asset' column
-    pub available: f64,    // Matches your 'available' column
-    pub locked: Option<f64>, // Optional: defaults to 0.0 if not provided
+    pub available: Decimal, // Matches NUMERIC
+    pub locked: Option<Decimal>,
 }
