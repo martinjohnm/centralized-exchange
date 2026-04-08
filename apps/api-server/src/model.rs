@@ -15,7 +15,7 @@ pub struct AppState {
 }
 #[derive(Deserialize)]
 pub struct SeedRequest {
-    pub user_id: i32,
+    pub user_id: i64,
     pub asset: String,     // Matches your 'asset' column
     pub available: Decimal, // Matches NUMERIC
     pub locked: Option<Decimal>,
