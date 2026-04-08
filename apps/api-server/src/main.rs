@@ -1,8 +1,9 @@
-use std::{error::Error, net::SocketAddr};
+use std::{env::var, error::Error, net::SocketAddr};
 
 use axum::{Router, routing::get};
+use sqlx::postgres::PgPoolOptions;
 
-use crate::handlers::{get_status, handler};
+use crate::{handlers::{get_status, handler}, model::AppState};
 mod handlers;
 mod model;
 
@@ -10,6 +11,17 @@ mod model;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+
+    let db_url = var("DATABASE_URL").expect("Database url must be set");
+
+    let pool = PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&db_url)
+        .await?;
+
+    let state = AppState {
+        db: pool
+    };
     
     let app = Router::new()
         .route("/", get(handler))
