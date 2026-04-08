@@ -1,6 +1,6 @@
 use std::{env::var, error::Error, net::SocketAddr};
 
-use axum::{Router, routing::get};
+use axum::{Router, routing::{get, post}};
 use sqlx::postgres::PgPoolOptions;
 
 use crate::{handlers::{get_status, handler, seed_user_balance}, model::AppState};
@@ -26,7 +26,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let app = Router::new()
         .route("/", get(handler))
         .route("/status", get(get_status))
-        .route("/seed", post(seed_user_balance));
+        .route("/seed", post(seed_user_balance))
+        .with_state(state);
 
     let addr = SocketAddr::from(([0,0,0,0], 3000));
     println!("listening on {:?}", addr);
