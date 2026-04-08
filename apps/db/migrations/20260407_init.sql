@@ -18,6 +18,12 @@ CREATE TABLE IF NOT EXISTS balances (
     PRIMARY KEY (user_id, asset)
 );
 
+ALTER TABLE balances 
+ADD CONSTRAINT positive_available CHECK (available >= 0);
+
+ALTER TABLE balances 
+ADD CONSTRAINT positive_locked CHECK (locked >= 0);
+
 -- 3. Trade History (TimescaleDB Hypertable)
 CREATE TABLE IF NOT EXISTS trade_history (
     time TIMESTAMPTZ NOT NULL,
@@ -40,6 +46,7 @@ CREATE TABLE IF NOT EXISTS open_orders (
     filled NUMERIC(38, 18) DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE open_orders ADD CONSTRAINT filled_not_exceed_qty CHECK (filled <= quantity);
 
 -- 5. Klines (Continuous Aggregates)
 -- This is better than Materialized Views because it updates AUTOMATICALLY
