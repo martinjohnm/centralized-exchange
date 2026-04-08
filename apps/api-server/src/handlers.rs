@@ -22,7 +22,7 @@ pub async fn get_status() -> Json<Status> {
     })
 }
 // Async DB operation handler
-async fn seed_user_balance(
+pub async fn seed_user_balance(
     State(state): State<AppState>, // Extracting the pooled connection
     Json(payload): Json<SeedRequest>, // Extracting the JSON body
 ) -> Result<(StatusCode, String), (StatusCode, String)> {
