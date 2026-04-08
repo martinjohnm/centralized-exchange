@@ -2,6 +2,9 @@ use std::{error::Error, net::SocketAddr};
 
 use axum::{Router, routing::get};
 
+use crate::handlers::{get_status, handler};
+mod handlers;
+mod model;
 
 
 
@@ -9,7 +12,8 @@ use axum::{Router, routing::get};
 async fn main() -> Result<(), Box<dyn Error>> {
     
     let app = Router::new()
-        .route("/", get(handler));
+        .route("/", get(handler))
+        .route("/status", get(get_status));
 
     let addr = SocketAddr::from(([0,0,0,0], 3000));
     println!("listening on {:?}", addr);
@@ -17,10 +21,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // run the server 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
-    
-    Ok(())
-}
 
-async fn handler() -> &'static str {
-    "Hello john"
+    Ok(())
 }
