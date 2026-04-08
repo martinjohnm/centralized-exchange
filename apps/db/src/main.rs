@@ -34,45 +34,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // ------------------------------BATCHING CONFIG---------------------
     let mut trade_buffer = Vec::with_capacity(1000);
     let mut last_flush = Instant::now();
-    let max_batch_size = 100;
-    let max_wait_time = Duration::from_millis(10);
+    let max_batch_size = 500;
+    let max_wait_time = Duration::from_millis(100);
 
 
     loop {
-        // pull the binary from the redis queue
-        let raw_data:Option<Vec<u8>> = conn.rpop(db_queue, None).await?;
-
-        if let Some(bytes) = raw_data {
-            // Decode the Protobuf bytes into the Rust struct
+        // 1. NON-BLOCKING DRAIN: Pull as many items as possible from Redis quickly
+        // This keeps the Redis queue empty and memory-resident
+        while let Ok(Some(bytes)) = conn.rpop::<_, Option<Vec<u8>>>(db_queue, None).await {
             if let Ok(trade) = exchange_proto::Trade::decode(&bytes[..]) {
                 trade_buffer.push(trade);
             }
-        } else {
-            // If the queue is empty sleep for 10 ms to avoid the 100% cpu usage
-            tokio::time::sleep(Duration::from_millis(10)).await;
-
+            // Don't stay in this while loop forever if Redis is slammed
+            if trade_buffer.len() >= max_batch_size { break; }
         }
 
-        // Trigger batch write
-        if !trade_buffer.is_empty() && trade_buffer.len() >= max_batch_size || last_flush.elapsed() >= max_wait_time {
-            // println!("flushing {} trades into timescaledb", trade_buffer.len());
+        // 2. THE LOGIC FIX: Check if we SHOULD flush
+        let should_flush = !trade_buffer.is_empty() && 
+            (trade_buffer.len() >= max_batch_size || last_flush.elapsed() >= max_wait_time);
+
+        if should_flush {
             let mut query_builder = QueryBuilder::new(
-                "INSERT INTO trade_history (time, symbol, price, volume, taker_side)"
+                "INSERT INTO trade_history (time, symbol, price, volume, taker_side) "
             );
 
-
             query_builder.push_values(trade_buffer.iter(), |mut b, trade| {
-                // 1. convert the timestamp (u64) to TIMESTAMPZ
                 let datetime = Utc.timestamp_micros(trade.timestamp as i64).unwrap();
-
-                // 2. parse the strings to decimal
                 let price = Decimal::from_str(&trade.price).unwrap_or(Decimal::ZERO);
                 let quantity = Decimal::from_str(&trade.quantity).unwrap_or(Decimal::ZERO);
-
-                // 3. Map enum i32 to String for the db
                 let side_str = if trade.taker_side == exchange_proto::Side::Buy as i32 { "BUY" } else { "SELL" };
-
-                // 4. construct the symbol 
                 let symbol = format!("{:?}_{:?}", trade.base, trade.quote);
 
                 b.push_bind(datetime)
@@ -84,14 +74,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let query = query_builder.build();
             if let Err(e) = query.execute(&pool).await {
-                eprintln!("Database insert error : {}", e);
-
-            } else {
-                // maybe do the kilines refresh here!
+                eprintln!("Database insert error: {}", e);
             }
 
             trade_buffer.clear();
             last_flush = Instant::now();
+        }
+
+        // 3. ADAPTIVE SLEEP: Only sleep if there's nothing to do
+        if trade_buffer.is_empty() {
+            tokio::time::sleep(Duration::from_millis(10)).await;
         }
     }
     
