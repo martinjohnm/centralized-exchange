@@ -1,6 +1,6 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Postgres};
+use sqlx::{Pool, Postgres, prelude::FromRow, types::chrono::{DateTime, Utc}};
 
 
 #[derive(Serialize)]
@@ -19,4 +19,20 @@ pub struct SeedRequest {
     pub asset: String,     // Matches your 'asset' column
     pub available: Decimal, // Matches NUMERIC
     pub locked: Option<Decimal>,
+}
+
+#[derive(Debug, Serialize, Deserialize,FromRow)]
+pub struct Kline {
+    pub bucket: DateTime<Utc>,
+    pub open: Decimal,
+    pub high: Decimal,
+    pub low: Decimal,
+    pub close: Decimal,
+    pub volume: Decimal,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct KlineParams {
+    pub symbol: String,
+    pub interval: String, // e.g., "1m", "1h"
 }

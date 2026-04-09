@@ -12,3 +12,4 @@ tower-http ={ version = "*", features = ["cors"]}
 serde = {version = "*", features = ["derive"]}
 serde_json = "*"
 sqlx = { version = "*", features = [ "runtime-tokio-native-tls", "postgres", "macros", "chrono", "rust_decimal" ] }
+chrono ={ version = "*", features = ["serde"]}

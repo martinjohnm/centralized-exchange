@@ -1,5 +1,6 @@
-use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
-use crate::model::{AppState, SeedRequest, Status};
+use axum::{Json, extract::{Query, State}, http::StatusCode, response::IntoResponse};
+use sqlx::query_as;
+use crate::model::{AppState, Kline, KlineParams, SeedRequest, Status};
 
 
 
@@ -78,6 +79,44 @@ pub async fn seed_user_balance(
             // the transaction 'tx' is dropped and automatically rolls back.
             eprintln!("Database error during balance seed: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, format!("Balance step failed: {}", e)).into_response()
+        }
+    }
+}
+
+
+pub async fn get_klines(
+    State(state) : State<AppState>,
+    Query(params) : Query<KlineParams>
+) -> impl IntoResponse {
+
+    println!("{:?}", &params);
+    let table_name = match params.interval.as_str() {
+        "1m" => "klines_1m",
+        "1h" => "klines_1h",
+        "1d" => "klines_1d",
+        _ => return (StatusCode::BAD_REQUEST, "Invalid interval").into_response(),
+    };
+
+    // The query 
+    let query_str = format!(
+        "SELECT bucket, open, high, low, close, volume 
+         FROM {} 
+         WHERE symbol = $1 
+         ORDER BY bucket DESC 
+         LIMIT 500",
+         table_name
+    );
+    println!("{:?}", &params);
+    let klines = query_as::<_, Kline>(&query_str)
+        .bind(&params.symbol)
+        .fetch_all(&state.db)
+        .await;
+
+    match klines {
+        Ok(data) => Json(data).into_response(),
+        Err(e) => {
+            eprintln!("Klines fetch error: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "failed to fetch klines").into_response()
         }
     }
 }
