@@ -90,6 +90,7 @@ pub async fn get_klines(
 ) -> impl IntoResponse {
 
     println!("{:?}", &params);
+    // 1. match the table name (got rid of possible sql injection )
     let table_name = match params.interval.as_str() {
         "1m" => "klines_1m",
         "1h" => "klines_1h",
