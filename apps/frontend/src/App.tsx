@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react"
+import { Markets } from "./components/Markets";
+import { Appbar } from "./components/Appbar";
 
 interface Candle {
   open: number;
@@ -64,32 +66,25 @@ const [newCandle, setNewCandle] = useState<Candle | null>(null);
 
   }, [WS_URL])
 
-
+  console.log(newCandle)
   
 
 
-  // Prevent "Cannot read properties of null" error
-  if (!newCandle) {
-    return <div>Connecting to Rust Gateway...</div>;
-  }
+  // // Prevent "Cannot read properties of null" error
+  // if (!newCandle) {
+  //   return <div>Connecting to Rust Gateway...</div>;
+  // }
 
   return (
-    <div>
-      <h1>Live Market Data</h1>
-      <ul>
-        <li>Open: {newCandle.open}</li>
-        <li>High: {newCandle.high}</li>
-        <li>Low: {newCandle.low}</li>
-        <li>Close: {newCandle.close}</li>
-        <li>Volume: {newCandle.volume}</li>
-        <li>Timestamp: {newCandle.timestamp}</li>
-      </ul>
-      
-      <hr />
-      
-      <h3>Raw JSON String:</h3>
-      <pre>{JSON.stringify(newCandle)}</pre>
-    </div>
+    <>
+      <Appbar/>
+      <div className="flex min-h-screen flex-col items-center justify-between p-24 bg-slate-300">
+        
+        <div>
+          <Markets/>
+        </div>
+      </div>
+    </>
   )
 }
 
