@@ -89,12 +89,11 @@ pub async fn get_klines(
     Query(params) : Query<KlineParams>
 ) -> impl IntoResponse {
 
-    println!("{:?}", &params);
     // 1. match the table name (got rid of possible sql injection )
     let table_name = match params.interval.as_str() {
         "1m" => "klines_1m",
-        "1h" => "klines_1h",
-        "1d" => "klines_1d",
+        "5m" => "klines_5m",
+        "15m" => "klines_15m",
         _ => return (StatusCode::BAD_REQUEST, "Invalid interval").into_response(),
     };
 
@@ -107,7 +106,6 @@ pub async fn get_klines(
          LIMIT 500",
          table_name
     );
-    println!("{:?}", &params);
     let klines = query_as::<_, Kline>(&query_str)
         .bind(&params.symbol)
         .fetch_all(&state.db)
