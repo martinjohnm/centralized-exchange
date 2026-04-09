@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
-import { Markets } from "./components/Markets";
-import { Appbar } from "./components/Appbar";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Landing } from "./page/Landing";
+import { Trade } from "./page/Trade";
 
 interface Candle {
   open: number;
@@ -76,15 +77,12 @@ const [newCandle, setNewCandle] = useState<Candle | null>(null);
   // }
 
   return (
-    <>
-      <Appbar/>
-      <div className="flex min-h-screen flex-col items-center justify-between p-24 bg-slate-300">
-        
-        <div>
-          <Markets/>
-        </div>
-      </div>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing/>}/>
+        <Route path="/trade" element={<Trade/>}/>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
