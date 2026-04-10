@@ -1,3 +1,4 @@
+import { Trade } from "../proto/exchange";
 
 
 const ws_url = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws"
@@ -6,7 +7,7 @@ export class SignalingManager {
     private ws : WebSocket;
     private static instance: SignalingManager;
     private bufferedMessages : any[] = [];
-    private callbacks: Map<string, { callback: any, id : string }[]>;
+    // private callbacks: Map<string, { callback: any, id : string }[]>;
     private id : number;
     private initialized : boolean = false;
 
@@ -14,7 +15,7 @@ export class SignalingManager {
     private constructor() {
         this.ws = new WebSocket(ws_url)
         this.bufferedMessages = [];
-        this.callbacks = new Map();
+        // this.callbacks = new Map();
         this.id = 1;
         this.init()
     }
@@ -37,9 +38,13 @@ export class SignalingManager {
         }
 
         this.ws.onmessage = (event) => {
-            const message = JSON.parse(event.data);
-
-            console.log(message);
+            try {
+                const buffer = new Uint8Array(event.data);
+                const message = Trade.decode(buffer);
+                console.log("Decoded Message:", message);
+            } catch(e) {
+                console.error("Failed to decode binary message:", e);
+            }
         }
     }
 

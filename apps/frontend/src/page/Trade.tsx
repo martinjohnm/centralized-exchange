@@ -6,8 +6,7 @@ import { SignalingManager } from "../utils/SignalingManager";
 
 export const Trade = () => {
 
-    const { market } = useParams();
-
+    const { market } = useParams<{ market: string }>();
     useEffect(() => {
       const init = async() => {
           SignalingManager.getInstance().sendMessage(
