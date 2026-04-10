@@ -14,9 +14,9 @@ export const Appbar = () => {
                 <div className={`text-sm pt-1 flex flex-col justify-center pl-8 cursor-pointer `} onClick={() => {}}>
                     Markets
                 </div>
-                <div className={`text-sm pt-1 flex flex-col justify-center pl-8 cursor-pointer `} onClick={() => {navi("/trade")}}>
+                {/* <div className={`text-sm pt-1 flex flex-col justify-center pl-8 cursor-pointer `} onClick={() => {navi("/trade")}}>
                     Trade
-                </div>
+                </div> */}
             </div>
             <div className="flex">
                 <div className="px-2 mr-2">

@@ -7,14 +7,17 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "gen-proto": "protoc --plugin=../../node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/generated --proto_path=../../proto ../../proto/exchange.proto"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
+    "protobufjs": "^8.0.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.14.0",
-    "tailwindcss": "^4.2.2"
+    "tailwindcss": "^4.2.2",
+    "ts-proto": "^2.11.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

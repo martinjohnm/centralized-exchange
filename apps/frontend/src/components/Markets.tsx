@@ -1,6 +1,9 @@
+import { useNavigate } from "react-router-dom";
+import { MarketId } from "../proto/exchange";
 
 export const Markets = () => {
 
+  const market = MarketId
 
   return (
     <div className="flex flex-col flex-1 max-w-[1280px] w-full">
@@ -8,8 +11,8 @@ export const Markets = () => {
         <div className="flex flex-col w-full rounded-lg bg-baseBackgroundL1 px-5 py-3">
           <table className="w-full table-auto">
             <MarketHeader />
-            <MarketComponent name="BTC/USDT" price={2345} day_change={34} day_volume={2345} market_cap={4590}/>
-            <MarketComponent name="ETH/USDT" price={1232} day_change={65} day_volume={5674} market_cap={8970}/>
+            <MarketComponent name="BTC/USDT" market_id={market.BTC_USDT} price={2345} day_change={34} day_volume={2345} market_cap={4590}/>
+            <MarketComponent name="ETH/USDT" market_id={market.ETH_USDT} price={1232} day_change={65} day_volume={5674} market_cap={8970}/>
           </table>
         </div>
       </div>
@@ -61,6 +64,11 @@ function MarketHeader() {
               24h Change<span className="w-[16px]"></span>
             </div>
           </th>
+          <th className="px-2 py-3 text-left text-sm font-normal text-baseTextMedEmphasis">
+            <div className="flex items-center gap-1 cursor-pointer select-none">
+                Trade<span className="w-[16px]"></span>
+            </div>
+          </th>
         </tr>
       </thead>
   );
@@ -68,12 +76,14 @@ function MarketHeader() {
 
 interface MarketParams {
   name : string;
+  market_id : number;
   price : number;
   market_cap : number;
   day_volume: number;
   day_change : number
 }
 function MarketComponent(params : MarketParams) {
+  const navi = useNavigate()
   return <thead>
         <tr className="">
           <th className="px-2 py-3 text-left text-sm font-normal text-baseTextMedEmphasis">
@@ -115,6 +125,11 @@ function MarketComponent(params : MarketParams) {
             <div className="flex items-center gap-1 cursor-pointer select-none">
               {params.day_change}
             </div>
+          </th>
+          <th className="px-2 py-3 text-left text-sm font-normal text-baseTextMedEmphasis">
+            <div className="flex items-center gap-1 cursor-pointer select-none hover:underline" onClick={() => {navi(`/trade/${params.market_id}`)}}>
+                    Trade
+                </div>
           </th>
         </tr>
       </thead>

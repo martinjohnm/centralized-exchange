@@ -80,7 +80,7 @@ const [newCandle, setNewCandle] = useState<Candle | null>(null);
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing/>}/>
-        <Route path="/trade" element={<Trade/>}/>
+        <Route path="/trade/:market" element={<Trade/>}/>
       </Routes>
     </BrowserRouter>
   )
