@@ -7,30 +7,25 @@ import { SignalingManager } from "../utils/SignalingManager";
 export const Trade = () => {
 
     const { market } = useParams<{ market: string }>();
-    useEffect(() => {
-      const init = async() => {
-          SignalingManager.getInstance().sendMessage(
-            {
-              "method": "subscribe",
-              "params": {
-                  "market": "btcusdt:5m"
-              }
-            })
-          
-          return () => {
-            SignalingManager.getInstance().sendMessage(
-              {
-                "method": "unsubscribe",
-                "params": {
-                    "market": "btcusdt:5m"
-                }
-              }
-            )
-          }
-      }
+  useEffect(() => {
+    // 1. Define the async call
+    const startSubscription = async () => {
+        SignalingManager.getInstance().sendMessage({
+          method: "subscribe",
+          params: { market: "btcusdt:5m" }
+        });
+    };
 
-      init()
-    })
+    startSubscription();
+
+    // 2. Return the cleanup function DIRECTLY to useEffect
+    return () => {
+      SignalingManager.getInstance().sendMessage({
+        method: "unsubscribe",
+        params: { market: "btcusdt:5m" }
+      });
+    };
+  }, []); // Empty dependency array ensures this runs on mount/unmount
     return <>
               <Appbar/>
               <div>
