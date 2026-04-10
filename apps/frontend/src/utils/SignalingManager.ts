@@ -1,4 +1,3 @@
-import { Trade } from "../proto/exchange";
 
 
 const ws_url = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws"
@@ -37,11 +36,12 @@ export class SignalingManager {
             this.bufferedMessages = [];
         }
 
-        this.ws.onmessage = (event) => {
+        this.ws.onmessage = async (event) => {
             try {
-                const buffer = new Uint8Array(event.data);
-                const message = Trade.decode(buffer);
-                console.log("Decoded Message:", message);
+                const text = await event.data.text()
+                const data = JSON.parse(text);
+                console.log(data);
+                
             } catch(e) {
                 console.error("Failed to decode binary message:", e);
             }
