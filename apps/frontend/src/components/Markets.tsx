@@ -6,8 +6,8 @@ export const Markets = () => {
 
 
   return (
-    <div className="flex flex-col flex-1 max-w-[1280px] w-full">
-      <div className="flex flex-col min-w-[700px] flex-1 w-full">
+    <div className="flex flex-col flex-1 max-w-7xl w-full">
+      <div className="flex flex-col min-w-175 flex-1 w-full">
         <div className="flex flex-col w-full rounded-lg bg-baseBackgroundL1 px-5 py-3">
           <table className="w-full table-auto">
             <MarketHeader />
@@ -26,17 +26,17 @@ function MarketHeader() {
         <tr className="">
           <th className="px-2 py-3 text-left text-sm font-normal text-baseTextMedEmphasis">
             <div className="flex items-center gap-1 cursor-pointer select-none">
-              Name<span className="w-[16px]"></span>
+              Name<span className="w-4"></span>
             </div>
           </th>
           <th className="px-2 py-3 text-left text-sm font-normal text-baseTextMedEmphasis">
             <div className="flex items-center gap-1 cursor-pointer select-none">
-              Price<span className="w-[16px]"></span>
+              Price<span className="w-4"></span>
             </div>
           </th>
           <th className="px-2 py-3 text-left text-sm font-normal text-baseTextMedEmphasis">
             <div className="flex items-center gap-1 cursor-pointer select-none">
-              Market Cap<span className="w-[16px]"></span>
+              Market Cap<span className="w-4"></span>
             </div>
           </th>
           <th className="px-2 py-3 text-left text-sm font-normal text-baseTextMedEmphasis">
@@ -61,12 +61,12 @@ function MarketHeader() {
           </th>
           <th className="px-2 py-3 text-left text-sm font-normal text-baseTextMedEmphasis">
             <div className="flex items-center gap-1 cursor-pointer select-none">
-              24h Change<span className="w-[16px]"></span>
+              24h Change<span className="w-4"></span>
             </div>
           </th>
           <th className="px-2 py-3 text-left text-sm font-normal text-baseTextMedEmphasis">
             <div className="flex items-center gap-1 cursor-pointer select-none">
-                Trade<span className="w-[16px]"></span>
+                Trade<span className="w-4"></span>
             </div>
           </th>
         </tr>
