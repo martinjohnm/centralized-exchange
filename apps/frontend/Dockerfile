@@ -6,10 +6,11 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# --- Stage 2: Runtime (Production Grade) ---
+# --- Stage 2: Runtime ---
 FROM nginx:alpine
-# Copy the build output from the builder stage to Nginx
+# --- ADD THIS LINE ---
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+# --------------------
 COPY --from=builder /app/dist /usr/share/nginx/html
-# Expose port 80 for the browser
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
