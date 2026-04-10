@@ -6,7 +6,7 @@ export class SignalingManager {
     private ws : WebSocket;
     private static instance: SignalingManager;
     private bufferedMessages : any[] = [];
-    // private callbacks: Map<string, { callback: any, id : string }[]>;
+    private callbacks: Map<string, { callback: any, id : string }[]>;
     private id : number;
     private initialized : boolean = false;
 
@@ -14,7 +14,7 @@ export class SignalingManager {
     private constructor() {
         this.ws = new WebSocket(ws_url)
         this.bufferedMessages = [];
-        // this.callbacks = new Map();
+        this.callbacks = new Map();
         this.id = 1;
         this.init()
     }
@@ -60,5 +60,16 @@ export class SignalingManager {
         }
 
         this.ws.send(JSON.stringify(messageTosend))
+    }
+
+    async registerCallback(type : string, callback: any, id : string) {
+        this.callbacks.set(type, (this.callbacks.get(type) || []).concat({callback, id}))
+    }
+
+    async deRegisterCallback(type: string, id : string) {
+        if (this.callbacks.has(type)) {
+            const newCallbacks = this.callbacks.get(type)?.filter(callback => callback.id !== id)?? []
+            this.callbacks.set(type, newCallbacks)
+        }
     }
 }

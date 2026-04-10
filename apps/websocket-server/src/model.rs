@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::model::exchange_proto::Trade;
+use crate::{candle::Candle, model::exchange_proto::Trade};
 
 
 
@@ -33,4 +33,22 @@ impl InternalTrade {
 pub enum WsRequest {
     Subscribe { market: String },
     Unsubscribe { market: String },
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "stream", content = "data", rename_all = "lowercase")]
+pub enum WsOutMessage {
+    // Realtime trade updates
+    Trade(InternalTrade),
+
+    // the ohlcv
+    Candle(Candle),
+
+    // Ticker 
+    Ticker {
+        market : String, 
+        last_price : f64,
+        price_change_percent: f64,
+        volume_24h : f64
+    }
 }

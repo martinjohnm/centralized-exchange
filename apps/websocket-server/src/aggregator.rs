@@ -1,6 +1,6 @@
 use tokio::sync::broadcast;
 
-use crate::{candle::Candle, model::{InternalTrade, exchange_proto::Trade}};
+use crate::{candle::Candle, model::{InternalTrade, WsOutMessage, exchange_proto::Trade}};
 
 use prost::Message as ProtoMessage;
 
@@ -32,7 +32,9 @@ pub async fn start_aggregator(
 
             _ = tiker.tick() => {
                 if current_candle.open > 0.0 {
-                    if let Ok(bytes) = serde_json::to_vec(&current_candle) {
+                    // Wrap the candle in the OutMessage Enum
+                    let out_msg = WsOutMessage::Candle(current_candle.clone());
+                    if let Ok(bytes) = serde_json::to_vec(&out_msg) {
                         let _ = broadcast_tx.send(bytes);
                     }
                 }

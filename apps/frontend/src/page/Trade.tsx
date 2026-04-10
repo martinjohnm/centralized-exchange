@@ -10,6 +10,12 @@ export const Trade = () => {
   useEffect(() => {
     // 1. Define the async call
     const startSubscription = async () => {
+
+        SignalingManager.getInstance().registerCallback("btcusdt:5m", (data: any) => {
+          console.log(data);
+          
+        }, `BTCUDT:5M`)
+
         SignalingManager.getInstance().sendMessage({
           method: "subscribe",
           params: { market: "btcusdt:5m" }
