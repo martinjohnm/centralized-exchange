@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { MarketId } from "../proto/exchange";
+import { MarketNames } from "../types/marketTypes";
 
 export const Markets = () => {
 
-  const market = MarketId
 
   return (
     <div className="flex flex-col flex-1 max-w-[1280px] w-full">
@@ -11,8 +11,8 @@ export const Markets = () => {
         <div className="flex flex-col w-full rounded-lg bg-baseBackgroundL1 px-5 py-3">
           <table className="w-full table-auto">
             <MarketHeader />
-            <MarketComponent name="BTC/USDT" market_id={market.BTC_USDT} price={2345} day_change={34} day_volume={2345} market_cap={4590}/>
-            <MarketComponent name="ETH/USDT" market_id={market.ETH_USDT} price={1232} day_change={65} day_volume={5674} market_cap={8970}/>
+            <MarketComponent name={MarketNames[MarketId.BTC_USDT]} market_id={MarketId.BTC_USDT} price={2345} day_change={34} day_volume={2345} market_cap={4590}/>
+            <MarketComponent name={MarketNames[MarketId.ETH_USDT]} market_id={MarketId.ETH_USDT} price={1232} day_change={65} day_volume={5674} market_cap={8970}/>
           </table>
         </div>
       </div>

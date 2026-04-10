@@ -1,3 +1,4 @@
+import { StreamType, type WsIncomingMessage } from "../types/marketTypes";
 
 
 const ws_url = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws"
@@ -39,8 +40,29 @@ export class SignalingManager {
         this.ws.onmessage = async (event) => {
             try {
                 const text = await event.data.text()
-                const data = JSON.parse(text);
-                console.log(data);
+                const message = JSON.parse(text) as WsIncomingMessage;
+
+
+                
+                const stream = message.stream;
+
+                if (this.callbacks.has(stream)) {
+                    this.callbacks.get(stream)?.forEach(({callback} : {callback: any}) => {
+                        if (stream === StreamType.CANDLE) {
+                            callback(message.data)
+                        } 
+
+                        if (stream === StreamType.TRADE) {
+                            console.log("hi trade");
+                            
+                        }
+
+                        if (stream === StreamType.TICKER) {
+                            console.log("stream");
+                            
+                        }
+                    })
+                }
                 
             } catch(e) {
                 console.error("Failed to decode binary message:", e);
