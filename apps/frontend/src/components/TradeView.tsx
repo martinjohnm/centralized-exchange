@@ -59,9 +59,9 @@ export const TradeView = ({market} : {market: string}) => {
                 setChartManageer(chartManager)
 
                 SignalingManager.getInstance().registerCallback(StreamType.CANDLE, (data: any) => {
-                    // console.log(data);
+                    
 
-                   // 1. Convert Microseconds to Seconds (Number)
+                    // 1. Convert Microseconds to Seconds (Number)
                     // data.timestamp / 1,000,000
                     const rawSeconds = Math.floor(Number(data.timestamp) / 1000000);
 

@@ -4,20 +4,8 @@ import { CandlestickSeries, ColorType, createChart, CrosshairMode, type ISeriesA
 
 export class ChartManager {
     private candleSeries : ISeriesApi<"Candlestick">;
-    // private lastUpdateTime: number = 0;
     private chart: any;
-    // private currentBar : {
-    //     open: number | null,
-    //     high: number | null,
-    //     low: number | null,
-    //     close: number | null
-    // } = {
-    //     open : null,
-    //     high: null,
-    //     low : null,
-    //     close: null
-    // }
-
+    
     constructor (
         ref: any,
         initialData: any[],
@@ -68,7 +56,7 @@ export class ChartManager {
                 close: Number(data.close),
             }))
         );
-        console.log("hai this is data from cahrt",initialData);
+        
     }
 
     public update(updatedcandle: {
@@ -87,7 +75,6 @@ export class ChartManager {
             open : updatedcandle.open,
         })
 
-        // this.lastUpdateTime = updatedcandle.timestamp
     }
 
     public destroy() {
