@@ -16,7 +16,7 @@ export const Trade = () => {
     // 1. Define the async call
     const init = async () => {
 
-        await getKlines();
+        await getKlines("1_3", "1m", 1);
 
         SignalingManager.getInstance().registerCallback(StreamType.CANDLE, (data: any) => {
           console.log(data);
