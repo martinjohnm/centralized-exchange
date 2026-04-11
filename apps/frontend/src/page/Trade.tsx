@@ -1,78 +1,35 @@
 import { useParams } from "react-router-dom";
-import { Appbar } from "../components/Appbar"
-import { useEffect, useState } from "react";
-import { SignalingManager } from "../utils/SignalingManager";
-import { CandleTime, MarketNames, StreamType } from "../types/marketTypes";
-import { getKlines } from "../utils/httpClient";
-
-const INITIAL_CANDLE_COUNT = 200;
+import { Appbar } from "../components/Appbar";
+import { TradeView } from "../components/TradeView";
+import { useEffect } from "react";
 
 export const Trade = () => {
 
   const { market } = useParams<{ market: string }>();
-  const marketName = MarketNames[Number(market)];
-  const [candleTime, setCandleTime] = useState<string>(CandleTime[5]);
-  
+
   useEffect(() => {
-    // 1. Define the async call
-    const init = async () => {
 
-        await getKlines("1_3", candleTime, INITIAL_CANDLE_COUNT);
+  }, [market])
+  
+  if (!market) return <div>{"NO such market available"}</div>
 
-        SignalingManager.getInstance().registerCallback(StreamType.CANDLE, (data: any) => {
-          console.log(data);
-          
-        }, `${StreamType.CANDLE}-${marketName}:${candleTime}`)
-
-        SignalingManager.getInstance().sendMessage({
-          method: "subscribe",
-          params: { market: `${marketName}:${candleTime}` }
-        });
-    };
-
-    init();
-
-    // 2. Return the cleanup function DIRECTLY to useEffect
-    return () => {
-      SignalingManager.getInstance().sendMessage({
-        method: "unsubscribe",
-        params: { market: `${marketName}:${candleTime}` }
-      });
-
-      SignalingManager.getInstance().deRegisterCallback(StreamType.CANDLE, `${StreamType.CANDLE}-${marketName}:${candleTime}`)
-    };
-  }, [candleTime, marketName]); // Empty dependency array ensures this runs on mount/unmount
-  return <>
+  return <div className="flex flex-row flex-1">
+        <div className="flex flex-col flex-1">
             <Appbar/>
-            <div className="flex items-center px-4 py-2 border-b border-gray-800 gap-4">
-              <span className="font-bold text-lg">{marketName}</span>
-              <TimeSelector selected={candleTime} onSelect={setCandleTime} />
+            <div className="flex flex-row h-[920px] border-y border-slate-800">
+                <div className="flex flex-col flex-1">
+                    <TradeView market={market}/>
+                </div>
+                <div className="flex flex-col w-[250px] overflow-hidden">
+                    {/* <Depth market={market as string} /> */}
+                </div>
             </div>
-            <div className="flex min-h-screen flex-col items-center justify-between p-24 bg-slate-300">
-              
-              <div>
-                
-              </div>
+        </div>
+        <div className="w-[10px] flex-col border-slate-800 border-l"></div>
+        <div>
+            <div className="flex flex-col w-[250px]">
+                {/* <SwapUI market={market as string} /> */}
             </div>
-  </>
-}
-const TimeSelector = ({ selected, onSelect }: { selected: string; onSelect: (t: string) => void }) => {
-  const options = ["1m", "5m", "15m"];
-  return (
-    <div className="flex bg-[#1e2329] p-1 rounded">
-      {options.map((tf) => (
-        <button
-          key={tf}
-          onClick={() => onSelect(tf)}
-          className={`px-3 py-1 text-xs font-medium rounded transition-all ${
-            selected === tf 
-              ? "bg-[#2b3139] text-[#f0b90b]" 
-              : "text-gray-400 hover:text-gray-200"
-          }`}
-        >
-          {tf}
-        </button>
-      ))}
+        </div>
     </div>
-  );
-};
+}
