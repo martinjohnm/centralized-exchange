@@ -5,6 +5,7 @@ import { SignalingManager } from "../utils/SignalingManager";
 import { CandleTime, MarketNames, StreamType } from "../types/marketTypes";
 import { getKlines } from "../utils/httpClient";
 
+const INITIAL_CANDLE_COUNT = 200;
 
 export const Trade = () => {
 
@@ -16,7 +17,7 @@ export const Trade = () => {
     // 1. Define the async call
     const init = async () => {
 
-        await getKlines("1_3", "1m", 1);
+        await getKlines("1_3", candleTime, INITIAL_CANDLE_COUNT);
 
         SignalingManager.getInstance().registerCallback(StreamType.CANDLE, (data: any) => {
           console.log(data);
