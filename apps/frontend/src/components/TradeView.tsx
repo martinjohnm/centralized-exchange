@@ -120,7 +120,7 @@ export const TradeView = ({market} : {market: string}) => {
               <span className="font-bold text-lg">{marketName}</span>
               <TimeSelector selected={candleTime} onSelect={setCandleTime} />
             </div>
-            <div ref={chartRef} className="" style={{ height: "520px", width: "100%", marginTop: 4 }}></div>
+            <div ref={chartRef} className="" style={{ height: "100%", width: "100%", marginTop: 4 }}></div>
   </>
    
 }
