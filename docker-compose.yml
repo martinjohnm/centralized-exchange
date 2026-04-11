@@ -116,6 +116,7 @@ services:
       - api-server
     environment:
       - VITE_WS_URL=ws://localhost:8080/ws # Inject the WS URL for the client browser
+      - VITE_BACKEND_URL=http://localhost:3000
 
 volumes:
   timescale-data:
