@@ -35,4 +35,5 @@ pub struct Kline {
 pub struct KlineParams {
     pub symbol: String,
     pub interval: String, // e.g., "1m", "1h"
+    pub limit : i64
 }

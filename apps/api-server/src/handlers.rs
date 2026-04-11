@@ -103,16 +103,22 @@ pub async fn get_klines(
          FROM {} 
          WHERE symbol = $1 
          ORDER BY bucket DESC 
-         LIMIT 500",
+         LIMIT $2",
          table_name
     );
     let klines = query_as::<_, Kline>(&query_str)
         .bind(&params.symbol)
+        .bind(&params.limit)
         .fetch_all(&state.db)
         .await;
 
     match klines {
-        Ok(data) => Json(data).into_response(),
+        Ok(mut data) => {
+            // SQL gives [Newest -> Oldest]
+            // frotnend needs [Oldest -> Newest]
+            data.reverse();
+            Json(data).into_response()
+        },
         Err(e) => {
             eprintln!("Klines fetch error: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, "failed to fetch klines").into_response()
