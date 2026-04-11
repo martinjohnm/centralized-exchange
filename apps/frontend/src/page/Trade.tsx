@@ -3,6 +3,7 @@ import { Appbar } from "../components/Appbar"
 import { useEffect, useState } from "react";
 import { SignalingManager } from "../utils/SignalingManager";
 import { CandleTime, MarketNames, StreamType } from "../types/marketTypes";
+import { getKlines } from "../utils/httpClient";
 
 
 export const Trade = () => {
@@ -13,7 +14,9 @@ export const Trade = () => {
   
   useEffect(() => {
     // 1. Define the async call
-    const startSubscription = async () => {
+    const init = async () => {
+
+        await getKlines();
 
         SignalingManager.getInstance().registerCallback(StreamType.CANDLE, (data: any) => {
           console.log(data);
@@ -26,7 +29,7 @@ export const Trade = () => {
         });
     };
 
-    startSubscription();
+    init();
 
     // 2. Return the cleanup function DIRECTLY to useEffect
     return () => {
