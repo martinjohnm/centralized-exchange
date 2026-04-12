@@ -41,7 +41,7 @@ async fn main() {
         let redis_url = redis_url.to_string();
         
         // create a transmitter clone before the thread creation
-        let tx_clone = trade_tx.clone();
+        let trade_tx_clone = trade_tx.clone();
 
         
 
@@ -50,7 +50,7 @@ async fn main() {
 
             // Engine and Worker are created inside the thread to ensure
             // they are owned by the thread's stack (Shared-Nothing).
-            let mut worker = Worker::new(market_id, config, &redis_url, tx_clone);
+            let mut worker = Worker::new(market_id, config, &redis_url, trade_tx_clone);
             
             worker.run_worker();
         });

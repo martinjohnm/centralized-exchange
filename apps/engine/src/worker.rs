@@ -16,14 +16,14 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new(market_id : MarketId, config : MarketConfig, redis_url : &str,  tx_clone : Sender<InternalTrade>) -> Self {
+    pub fn new(market_id : MarketId, config : MarketConfig, redis_url : &str,  trade_tx_clone : Sender<InternalTrade>) -> Self {
 
         let queue_key = config.redis_key;
         let symbol = market_id;
         let redis_client = redis::Client::open(redis_url).unwrap();
 
-        let tx_clone = tx_clone.clone();
-        let engine = Engine::new(config, tx_clone);
+        let trade_tx_clone = trade_tx_clone.clone();
+        let engine = Engine::new(config, trade_tx_clone);
         let connection = redis_client.get_connection().expect("failed to connect to redis");
 
         Self { 

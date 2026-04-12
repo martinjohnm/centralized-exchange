@@ -8,7 +8,7 @@ pub struct Engine {
     pub config: MarketConfig,
     pub orderbook : Orderbook,
     pub ledger : Ledger,
-    pub transmitter: Sender<InternalTrade>
+    pub trade_transmitter: Sender<InternalTrade>
 }
 
 impl Engine {
@@ -17,7 +17,7 @@ impl Engine {
             config,
             orderbook : Orderbook::new(config,trade_producer.clone()),
             ledger : Ledger::new(),
-            transmitter : trade_producer
+            trade_transmitter : trade_producer
         }
     }
 
@@ -48,7 +48,7 @@ impl Engine {
             Ok(trades) => {
                 for trade in trades {
                     // unlock the makers (who sat in the orderbook ) fund
-                    if let Err(e) = self.transmitter.try_send(trade) {
+                    if let Err(e) = self.trade_transmitter.try_send(trade) {
                         eprintln!("trade is not sent");
                     }
                 }
