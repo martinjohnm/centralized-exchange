@@ -2,7 +2,7 @@
 
 use tokio::sync::mpsc::{self, Sender};
 
-use crate::{ledger::Ledger, model::{ActionType, InternalTrade, OrderRequest, exchange_proto::MarketId}, orderbook::Orderbook, utils::MarketConfig};
+use crate::{ledger::Ledger, model::{ActionType, DepthResponse, InternalTrade, OrderRequest, exchange_proto::MarketId}, orderbook::Orderbook, utils::MarketConfig};
 
 pub struct Engine {
     pub config: MarketConfig,
@@ -37,6 +37,10 @@ impl Engine {
                 self.handle_cancel_all(request);
             }
         }
+    }
+
+    pub fn get_market_depth(&self, levels: usize) -> DepthResponse {
+        self.orderbook.get_depth(levels)
     }
 
     // -----------Request handlers --------------------------

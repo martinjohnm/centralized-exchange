@@ -37,40 +37,57 @@ impl Worker {
     pub fn run_worker(&mut self) {
         // 1. Poll redis (Blocking call)
       
-        // 1. INITIALIZE TIMER OUTSIDE THE LOOP
-        let mut _last_log_time = std::time::Instant::now();
-        let _log_interval = std::time::Duration::from_millis(500);
-
+        let mut last_snapshot = std::time::Instant::now();
+        let snapshot_interval = std::time::Duration::from_secs(1);
 
         loop {
             // 1. BLOCK for the first item (Parks the thread until data exists)
-            let first_time : Vec<Vec<u8>> = self.connection.brpop(&self.config.redis_key, 0.0).expect("Redis connection lost");
-            let mut batch = vec![first_time[1].clone()];
+            let result: redis::RedisResult<Option<Vec<Vec<u8>>>> = 
+                self.connection.brpop(&self.config.redis_key, 1.0);
 
-            // 2. Greedy drain: Grab up to 99 more items immediately.
-            let count = NonZeroUsize::new(99);
-            if let Ok(extra_items) = self.connection.rpop::<&str, Vec<Vec<u8>>>(&self.config.redis_key, count) {
-                batch.extend(extra_items)
-            }
-
-            // 3. Process the batch
-            // Inside the batch loop
-            for binary_payload in batch {
-                // 1. Decode the raw bytes into the Protobuf "ExchangeRequest"
-                if let Ok(proto) = ExchangeRequest::decode(&binary_payload[..]) {
-                    
-                    // 2. Transform the Proto into your Clean "OrderRequest"
-                    // This uses the TryFrom logic we wrote earlier!
-                    match OrderRequest::try_from(proto) {
-                        Ok(clean_order) => {
-                            // 3. Pass the CLEAN order to the engine
-                            self.engine.process_request(clean_order);
-                        }
-                        Err(e) => eprintln!("Firewall rejected order: {}", e),
+            match result {
+                Ok(Some(data)) => {
+                    let mut batch = vec![data[1].clone()];
+                    let count = NonZeroUsize::new(99);
+                    if let Ok(extra_items) = self.connection.rpop::<&str, Vec<Vec<u8>>>(&self.config.redis_key, count) {
+                        batch.extend(extra_items);
                     }
+
+                    for binary_payload in batch {
+                        if let Ok(proto) = ExchangeRequest::decode(&binary_payload[..]) {
+                            // Transform the order to clean "OrderRequest"
+                            match OrderRequest::try_from(proto) {
+                                Ok(clean_order) => {
+                                    self.engine.process_request(clean_order);
+                                }
+                                Err(e) => {
+                                    eprintln!("Firewall rejected the order")
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Ok(None) => {
+                    // Timeout reached
+                }
+
+                Err(e) => {
+                    eprintln!("Redis error: {}", e)
+
                 }
             }
 
+            // We are sending the depth every second to a transmitter as depth snapshot
+            if last_snapshot.elapsed() >= snapshot_interval {
+                // geting the top 50 depth response 
+                let depth = self.engine.get_market_depth(50);
+
+                // Try to send the depth here 
+
+                // update the last_snapshot
+                last_snapshot = std::time::Instant::now();
+            }
         }
 
     }

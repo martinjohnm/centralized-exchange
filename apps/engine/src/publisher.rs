@@ -4,29 +4,39 @@ use prost::Message;
 use redis::AsyncCommands;
 use tokio::{net::unix::pipe::Receiver, sync::mpsc};
 
-use crate::model::{InternalTrade, exchange_proto::{MarketId, Trade}};
+use crate::model::{DepthResponse, InternalTrade, exchange_proto::{MarketId, Trade}};
 
 
 
 
 pub struct RedisPublisher {
-    pub receiver : mpsc::Receiver<InternalTrade>,
+    pub trade_receiver : mpsc::Receiver<InternalTrade>,
+    pub depth_receiver : mpsc::Receiver<DepthResponse>,
     pub redis_url : String,
-    pub channels : HashMap<MarketId , &'static str>,
+    pub trade_channels : HashMap<MarketId , &'static str>,
+    pub depth_channels : HashMap<MarketId, &'static str>,
     pub db_queue : &'static str
 }
 
 impl RedisPublisher {
-    pub fn new(receiver :mpsc::Receiver<InternalTrade>, redis_url: String) -> Self {
+    pub fn new(trade_receiver :mpsc::Receiver<InternalTrade>, depth_receiver : mpsc::Receiver<DepthResponse>, redis_url: String) -> Self {
 
-        let mut channels = HashMap::new();
+        let mut trade_channels = HashMap::new();
 
-        channels.insert(MarketId::BtcUsdt, "trades:btcusdt");
-        channels.insert(MarketId::EthUsdt, "trades:ethusdt");
+        trade_channels.insert(MarketId::BtcUsdt, "trades:btcusdt");
+        trade_channels.insert(MarketId::EthUsdt, "trades:ethusdt");
+
+        let mut depth_channels = HashMap::new();
+
+        depth_channels.insert(MarketId::BtcUsdt, "depth:btcusdt");
+        depth_channels.insert(MarketId::EthUsdt, "depth:ethusdt");
+
         Self { 
-            receiver,
+            trade_receiver,
+            depth_receiver,
             redis_url,
-            channels,
+            trade_channels,
+            depth_channels,
             db_queue : "db_processor"
         }
     }
@@ -41,7 +51,7 @@ impl RedisPublisher {
 
         let mut batch = Vec::with_capacity(100); // 100 is a sweet spot for throughput
 
-        while let Some(internal_trade) = self.receiver.recv().await {
+        while let Some(internal_trade) = self.trade_receiver.recv().await {
             // 1. transform the internal_trade to Trade (Proto)
             let proto_trade = Trade {
                 maker_id : internal_trade.maker_id,
@@ -68,12 +78,12 @@ impl RedisPublisher {
 
             // 3. publish to redis channel 
             // we use the market_id to craete a dynamic channel name
-            let channel = self.channels.get(&internal_trade.market).expect("No such channel available");
+            let channel = self.trade_channels.get(&internal_trade.market).expect("No such channel available");
             batch.push((channel, payload));
             
             // 3. TRIGGER FLUSH: If batch is full OR the channel is currently empty
             // receiver.is_empty() is great for "Opportunistic Batching"
-            if batch.len() >= 100 || self.receiver.is_empty() {
+            if batch.len() >= 100 || self.trade_receiver.is_empty() {
                 let mut pipe = redis::pipe();
                 
                 for (chan, data) in batch.drain(..) {
