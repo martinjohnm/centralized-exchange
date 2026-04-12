@@ -188,14 +188,16 @@ pub type Asset = String;
 
 // =========== Depth event ==========================
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Level {
     pub price: Decimal,
     pub quantity: Decimal,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct DepthResponse {
+    pub market: MarketId,
     pub bids: Vec<Level>,
     pub asks: Vec<Level>,
+    pub timestamp : u64
 }

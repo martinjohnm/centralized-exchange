@@ -260,7 +260,17 @@ impl Orderbook {
             })
             .collect();
 
-        DepthResponse { bids, asks }
+        let timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_micros() as u64;
+
+        DepthResponse {
+            market : self.config.market_id,
+            bids,
+            asks,
+            timestamp
+        }
     }
    
     // -============================================ HELPERS ==============================================================

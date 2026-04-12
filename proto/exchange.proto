@@ -64,6 +64,18 @@ message Trade {
     AssetId quote = 10;
 }
 
+message Level {
+    string price = 1;    // String to preserve Decimal precision in JS
+    string quantity = 2; // Total volume at this price
+}
+
+message DepthUpdate {
+    MarketId market = 1;        // Using MarketId enum
+    repeated Level bids = 2; // Buy side (Sorted High -> Low)
+    repeated Level asks = 3; // Sell side (Sorted Low -> High)
+    uint64 timestamp = 4;
+}
+
 enum AssetId {
     ASSET_UNKNOWN = 0;
     BTC = 1;
