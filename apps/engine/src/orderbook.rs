@@ -237,6 +237,7 @@ impl Orderbook {
     pub fn get_depth(&self, levels: usize) -> DepthResponse {
         let bids: Vec<Level> = self.bids
             .iter()
+            .rev()
             .take(levels)
             .map(| (price, orders) | {
                 let total_qty : Decimal = orders.iter().map(|o| o.quantity).sum();
@@ -1078,7 +1079,7 @@ mod tests {
         };
         // 2. Initialize Orderbook with the test transmitter
         let mut ob = Orderbook::new(config, tx);
-        
+
         // --- SELL SIDE (ASKS) ---
         // Sell 1.0 @ 51.0
         ob.match_or_rest(create_limit_req(42, dec!(51), dec!(1.0), Side::Sell)).unwrap();
