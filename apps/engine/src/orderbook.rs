@@ -4,7 +4,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use tokio::sync::mpsc::{Sender, Receiver};
 
-use crate::{model::{ClientOrderId, EngineOrderId, InternalTrade, MatchingError, Order, OrderError, OrderRequest, Side, UserId}, utils::MarketConfig};
+use crate::{model::{ClientOrderId, DepthResponse, EngineOrderId, InternalTrade, Level, MatchingError, Order, OrderError, OrderRequest, Side, UserId}, utils::MarketConfig};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 
@@ -232,6 +232,35 @@ impl Orderbook {
         }
         cancelled
     }
+
+    // fn to get the best bids and asks to send to the clients to show 
+    pub fn get_depth(&self, levels: usize) -> DepthResponse {
+        let bids: Vec<Level> = self.bids
+            .iter()
+            .take(levels)
+            .map(| (price, orders) | {
+                let total_qty : Decimal = orders.iter().map(|o| o.quantity).sum();
+                Level {
+                    price : *price,
+                    quantity : total_qty
+                }
+            })
+            .collect();
+
+        let asks : Vec<Level> = self.asks
+            .iter()
+            .take(levels)
+            .map(| (price, orders) | {
+                let total_qty : Decimal = orders.iter().map(|o| o.quantity).sum();
+                Level {
+                    price : *price,
+                    quantity: total_qty
+                }
+            })
+            .collect();
+
+        DepthResponse { bids, asks }
+    }
    
     // -============================================ HELPERS ==============================================================
     // 1. Fn to get the best bid
@@ -388,6 +417,22 @@ mod tests {
             order_type: OrderType::Limit,
             action: ActionType::Create,
             client_id: Some(client_id),
+            engine_id: None,
+            timestamp: 123456789,
+        }
+    }
+
+    // Helper function to reduce boilerplate in tests
+    fn create_limit_req(user_id: u64, price: Decimal, qty: Decimal, side: Side) -> OrderRequest {
+        OrderRequest {
+            user_id,
+            client_id: Some(user_id + 100),
+            price: Some(price),
+            quantity: Some(qty),
+            side,
+            market: MarketId::BtcUsdt,
+            order_type: OrderType::Limit,
+            action: ActionType::Create,
             engine_id: None,
             timestamp: 123456789,
         }
@@ -1018,4 +1063,54 @@ mod tests {
         assert!(ob.bids.contains_key(&dec!(50)), "Taker should have rested in the book as Bid");
     }
 
+
+    #[test]
+    fn test_depth_response() {
+        // 1. Create a local channel for the test
+        let (tx, mut rx) = mpsc::channel::<InternalTrade>(1000);
+
+        let config = MarketConfig {
+            market_id: MarketId::BtcUsdt,
+            base_asset: AssetId::Btc,
+            quote_asset: AssetId::Usdt,
+            min_order_size: dec!(0.001),
+            redis_key: "trades:btc_usdt",
+        };
+        // 2. Initialize Orderbook with the test transmitter
+        let mut ob = Orderbook::new(config, tx);
+        
+        // --- SELL SIDE (ASKS) ---
+        // Sell 1.0 @ 51.0
+        ob.match_or_rest(create_limit_req(42, dec!(51), dec!(1.0), Side::Sell)).unwrap();
+        // Sell 2.5 @ 52.0
+        ob.match_or_rest(create_limit_req(43, dec!(52), dec!(2.5), Side::Sell)).unwrap();
+        // Sell 0.5 @ 51.0 (Same price as first, should aggregate)
+        ob.match_or_rest(create_limit_req(44, dec!(51), dec!(0.5), Side::Sell)).unwrap();
+
+        // --- BUY SIDE (BIDS) ---
+        // Buy 1.0 @ 49.0
+        ob.match_or_rest(create_limit_req(45, dec!(49), dec!(1.0), Side::Buy)).unwrap();
+        // Buy 3.0 @ 48.0
+        ob.match_or_rest(create_limit_req(46, dec!(48), dec!(3.0), Side::Buy)).unwrap();
+
+        // --- EXECUTION ---
+        let depth = ob.get_depth(5);
+
+        // --- VERIFICATION ---
+    
+        // 1. Check Asks (Sorted Ascending: 51 then 52)
+        assert_eq!(depth.asks.len(), 2);
+        assert_eq!(depth.asks[0].price, dec!(51));
+        assert_eq!(depth.asks[0].quantity, dec!(1.5)); // Aggregated 1.0 + 0.5
+        assert_eq!(depth.asks[1].price, dec!(52));
+
+        // 2. Check Bids (Sorted Descending: 49 then 48)
+        assert_eq!(depth.bids.len(), 2);
+        assert_eq!(depth.bids[0].price, dec!(49)); // Best bid (Highest)
+        assert_eq!(depth.bids[0].quantity, dec!(1.0));
+        assert_eq!(depth.bids[1].price, dec!(48));
+
+    }
+
+    
 }

@@ -185,3 +185,17 @@ pub type UserId = u64;
 pub type ClientOrderId = u64;
 pub type EngineOrderId = u64;
 pub type Asset = String;
+
+// =========== Depth event ==========================
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Level {
+    pub price: Decimal,
+    pub quantity: Decimal,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DepthResponse {
+    pub bids: Vec<Level>,
+    pub asks: Vec<Level>,
+}
