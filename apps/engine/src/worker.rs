@@ -3,7 +3,7 @@ use std::{num::NonZeroUsize};
 use prost::Message;
 use redis::{Commands, Connection};
 use tokio::sync::mpsc::{Sender, Receiver};
-use crate::{engine::Engine, model::{InternalTrade, OrderRequest, exchange_proto::{ExchangeRequest, MarketId}}, utils::MarketConfig};
+use crate::{engine::Engine, model::{DepthResponse, InternalTrade, OrderRequest, exchange_proto::{ExchangeRequest, MarketId}}, utils::MarketConfig};
 
 
 
@@ -12,11 +12,12 @@ pub struct Worker {
     pub connection: Connection,
     pub market_id : MarketId,
     pub engine : Engine,
-    pub config : MarketConfig
+    pub config : MarketConfig,
+    pub depth_producer : Sender<DepthResponse>
 }
 
 impl Worker {
-    pub fn new(market_id : MarketId, config : MarketConfig, redis_url : &str,  trade_tx_clone : Sender<InternalTrade>) -> Self {
+    pub fn new(market_id : MarketId, config : MarketConfig, redis_url : &str,  trade_tx_clone : Sender<InternalTrade>, depth_tx_clone: Sender<DepthResponse>) -> Self {
 
         let queue_key = config.redis_key;
         let symbol = market_id;
@@ -30,7 +31,8 @@ impl Worker {
             market_id,
             connection,
             engine,
-            config
+            config,
+            depth_producer : depth_tx_clone
         }
     }
 
@@ -80,10 +82,15 @@ impl Worker {
 
             // We are sending the depth every second to a transmitter as depth snapshot
             if last_snapshot.elapsed() >= snapshot_interval {
+
                 // geting the top 50 depth response 
-                let depth = self.engine.get_market_depth(50);
 
                 // Try to send the depth here 
+                let depth = self.engine.get_market_depth(50);
+                if let Err(e) = self.depth_producer.try_send(depth) {
+                        eprintln!("trade is not sent");
+                    }
+                
 
                 // update the last_snapshot
                 last_snapshot = std::time::Instant::now();

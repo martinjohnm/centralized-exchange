@@ -102,13 +102,14 @@ impl RedisPublisher {
                         timestamp : depth.timestamp
                     };
 
+
                     let mut payload = Vec::new();
                     if let Err(e) = proto_depth.encode(&mut payload) {
                         eprintln!("Failed to encode depth: {}", e);
                         
                     }
 
-                    let channel = self.trade_channels.get(&depth.market).expect("No such channel available");
+                    let channel = self.depth_channels.get(&depth.market).expect("No such channel available");
                     pipe.publish(channel, &payload);
                     pending = true;
                 }

@@ -43,7 +43,7 @@ async fn main() {
         
         // create a transmitter clone before the thread creation
         let trade_tx_clone = trade_tx.clone();
-
+        let depth_tx_clone = depth_tx.clone();
         
 
         thread::spawn(move || {
@@ -51,7 +51,7 @@ async fn main() {
 
             // Engine and Worker are created inside the thread to ensure
             // they are owned by the thread's stack (Shared-Nothing).
-            let mut worker = Worker::new(market_id, config, &redis_url, trade_tx_clone);
+            let mut worker = Worker::new(market_id, config, &redis_url, trade_tx_clone, depth_tx_clone);
             
             worker.run_worker();
         });
