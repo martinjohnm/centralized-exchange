@@ -90,7 +90,10 @@ export const TradeView = ({market} : {market: string}) => {
 
                 SignalingManager.getInstance().sendMessage({
                     method: "subscribe",
-                    params: { market: `${marketName}:${candleTime}` }
+                    params: { 
+                        market: `${marketName}`,
+                        stream : `candles_${candleTime}` 
+                    }
                 });
             }
 
@@ -103,7 +106,10 @@ export const TradeView = ({market} : {market: string}) => {
         return () => {
             SignalingManager.getInstance().sendMessage({
                 method: "unsubscribe",
-                params: { market: `${marketName}:${candleTime}` }
+                params: { 
+                        market: `${marketName}`,
+                        stream : `candles_${candleTime}` 
+                    }
             });
 
             SignalingManager.getInstance().deRegisterCallback(StreamType.CANDLE, `${StreamType.CANDLE}-${marketName}:${candleTime}`)

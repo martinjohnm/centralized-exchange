@@ -4,7 +4,7 @@ use axum::{Router, extract::{State, WebSocketUpgrade}, response::Response, routi
 
 use tokio::sync::broadcast;
 
-use crate::{aggregator::start_aggregator, handler::handle_socket, redis::start_redis_listener, state::AppState};
+use crate::{aggregator::start_aggregator, handler::handle_socket, redis::{start_depth_redis_listener, start_trades_redis_listener}, state::AppState};
 
 
 
@@ -24,7 +24,7 @@ async fn main() {
     // 2. Define which markets supports
     let markets = vec!["btcusdt".to_string(), "ethusdt".to_string()];
 
-    let intervals = vec![("1m", 60_000_000 as u64), ("5m", 300_000_000 as u64), ("15m", 900_000_000 as u64)];
+    let intervals = vec![("candles_1m", 60_000_000 as u64), ("candles_5m", 300_000_000 as u64), ("candles_15m", 900_000_000 as u64)];
 
     for market_symbol in markets {
 
@@ -59,7 +59,22 @@ async fn main() {
         });
 
         // start the redis listenre for this market
-        tokio::spawn(start_redis_listener(market_symbol, redis_tx));
+        tokio::spawn(start_trades_redis_listener(market_symbol, redis_tx));
+    }
+
+    let markets = vec!["btcusdt".to_string(), "ethusdt".to_string()];
+
+    for market_symbol in markets {
+        // setup the dpeth room 
+        let depth_room_id = format!("{}:depth", market_symbol);
+        let (depth_broadcast_tx,_) = broadcast::channel(1024);
+
+        state.market_map.write().await.insert(depth_room_id, depth_broadcast_tx.clone());
+
+        // 2. Start a dedicated Redis listener for Depth
+        // This listens to "depth:btcusdt" instead of "trades:btcusdt"
+        let depth_channel_name = format!("depth:{}", market_symbol); 
+        tokio::spawn(start_depth_redis_listener(market_symbol, depth_broadcast_tx));
     }
 
     // 1. simple Axum router

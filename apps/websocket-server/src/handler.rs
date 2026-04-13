@@ -17,14 +17,21 @@ pub async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
                 if let Ok(text) = msg.to_text() {
                     if let Ok(req) = serde_json::from_str::<WsRequest>(text) {
                         match req {
-                            WsRequest::Subscribe { market } => {
-                                if let Some(tx) = state.get_tx(&market).await {
-                                    let stream = BroadcastStream::new(tx.subscribe());
-                                    subscriptions.insert(market, stream);
+                            WsRequest::Subscribe { market, stream } => {
+                                // 1. Create the unique Room ID (e.g., "btcusdt:depth")
+                                let room_id = format!("{}:{}", market, stream);
+                                println!("{}", room_id);
+
+                                // 2. Fetch the broadcast sender from your AppState
+                                if let Some(tx) = state.market_map.read().await.get(&room_id) {
+                                    let stream_handle = BroadcastStream::new(tx.subscribe());
+                                    // Use the room_id as the key so the user can have multiple subs
+                                    subscriptions.insert(room_id, stream_handle);
                                 }
                             }
-                            WsRequest::Unsubscribe { market } => {
-                                subscriptions.remove(&market);
+                            WsRequest::Unsubscribe { market, stream } => {
+                                let room_id = format!("{}:{}", market, stream);
+                                subscriptions.remove(&room_id);
                             }
                         }
                     }

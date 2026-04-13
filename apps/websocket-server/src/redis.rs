@@ -1,9 +1,10 @@
 use futures_util::StreamExt;
 use dotenvy::dotenv;
+use tokio::sync::broadcast;
 use std::env;
 
 
-pub async fn start_redis_listener(
+pub async fn start_trades_redis_listener(
     market: String, 
     agg_tx: tokio::sync::mpsc::Sender<Vec<u8>>
 ) {
@@ -38,6 +39,52 @@ pub async fn start_redis_listener(
                 if let Err(e) = agg_tx.send(payload).await {
                     eprintln!("❌ Aggregator for {} closed: {}", market, e);
                     break;
+                }
+            }
+            Err(e) => eprintln!("❌ Redis payload error on {}: {}", market, e),
+        }
+    }
+}
+
+
+pub async fn start_depth_redis_listener(
+    market: String, 
+    broadcast_tx: broadcast::Sender<Vec<u8>>
+) {
+    let redis_url = env::var("REDIS_URL")
+        .expect("REDIS_URL must be set in .env or system environment");
+    println!("{:?}", redis_url);
+    // 1. Establish connection
+    let client = redis::Client::open(redis_url)
+        .expect("Failed to create Redis client");
+        
+    let mut pubsub = client
+        .get_async_pubsub()
+        .await
+        .expect("Failed to get async pubsub");
+
+    // 2. Subscribe to the specific market channel
+    // Example: "trades:btc_usdt"
+    let channel_name = format!("depth:{}", market);
+    pubsub.subscribe(&channel_name)
+        .await
+        .expect(&format!("Failed to subscribe to {}", channel_name));
+
+    println!("📡 Redis Listener started for: {}", channel_name);
+
+    let mut stream = pubsub.on_message();
+
+    // 3. Listen and forward to Broadcastor
+    while let Some(msg) = stream.next().await {
+        match msg.get_payload::<Vec<u8>>() {
+            Ok(payload) => {
+                // We send the raw Protobuf bytes to the Broadcastor
+                
+                if let Err(_) = broadcast_tx.send(payload) {
+                    // This is actually normal! It just means no one is currently 
+                    // watching this market. Don't break; keep listening for 
+                    // when the next user connects.
+                    // println!("No active subscribers for {}, skipping broadcast", market);
                 }
             }
             Err(e) => eprintln!("❌ Redis payload error on {}: {}", market, e),

@@ -1,3 +1,4 @@
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
 use crate::{candle::Candle, model::exchange_proto::Trade};
@@ -31,8 +32,14 @@ impl InternalTrade {
 #[derive(Deserialize)]
 #[serde(tag = "method", content = "params", rename_all = "lowercase")]
 pub enum WsRequest {
-    Subscribe { market: String },
-    Unsubscribe { market: String },
+    Subscribe { 
+        market: String, 
+        stream: String // "candles_1m", "candles_5m", or "depth"
+    },
+    Unsubscribe { 
+        market: String,
+        stream: String 
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -50,5 +57,21 @@ pub enum WsOutMessage {
         last_price : f64,
         price_change_percent: f64,
         volume_24h : f64
+    },
+
+    Depth {
+        market: u64,
+        bids: Vec<Level>,
+        asks: Vec<Level>,
+        timestamp : u64
     }
+}
+
+
+// =========== Depth event ==========================
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Level {
+    pub price: Decimal,
+    pub quantity: Decimal,
 }
