@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { Appbar } from "../components/Appbar";
-import { TradeView } from "../components/TradeView";
 import { useEffect } from "react";
+import { Depth } from "../components/depth/Depth";
 
 export const Trade = () => {
 
@@ -18,10 +18,10 @@ export const Trade = () => {
             <Appbar/>
             <div className="flex flex-row h-230 border-y border-slate-800">
                 <div className="flex flex-col flex-1">
-                    <TradeView market={market}/>
+                    {/* <TradeView market={market}/> */}
                 </div>
                 <div className="flex flex-col w-62.5 overflow-hidden">
-                    {/* <Depth market={market as string} /> */}
+                    <Depth market={market as string} />
                 </div>
             </div>
         </div>

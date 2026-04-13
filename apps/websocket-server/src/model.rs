@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-use crate::{candle::Candle, model::exchange_proto::Trade};
+use crate::{candle::Candle, model::exchange_proto::{DepthUpdate, Trade}};
 
 
 
@@ -28,8 +28,37 @@ impl InternalTrade {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Depth {
+    pub market: u64,
+    pub bids: Vec<Level>,
+    pub asks: Vec<Level>,
+    pub timestamp : u64
+}
 
-#[derive(Deserialize)]
+impl Depth {
+    pub fn from_proto(proto: DepthUpdate) -> Self {
+        Self { 
+            // Parsing market ID from string to u64
+            market: proto.market as u64,     
+                   
+            // 2. Use .parse() or Decimal::from_str()
+            bids: proto.bids.into_iter().map(|l| Level {
+                price: l.price.parse::<Decimal>().unwrap_or_default(),
+                quantity: l.quantity.parse::<Decimal>().unwrap_or_default(),
+            }).collect(),
+
+            asks: proto.asks.into_iter().map(|l| Level {
+                price: l.price.parse::<Decimal>().unwrap_or_default(),
+                quantity: l.quantity.parse::<Decimal>().unwrap_or_default(),
+            }).collect(),
+
+            timestamp: proto.timestamp as u64,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "method", content = "params", rename_all = "lowercase")]
 pub enum WsRequest {
     Subscribe { 
@@ -59,12 +88,7 @@ pub enum WsOutMessage {
         volume_24h : f64
     },
 
-    Depth {
-        market: u64,
-        bids: Vec<Level>,
-        asks: Vec<Level>,
-        timestamp : u64
-    }
+    Depth(Depth)
 }
 
 

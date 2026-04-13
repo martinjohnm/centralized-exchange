@@ -3,6 +3,9 @@ use dotenvy::dotenv;
 use tokio::sync::broadcast;
 use std::env;
 
+use crate::model::{Depth, WsOutMessage, exchange_proto::DepthUpdate};
+use prost::Message as ProtoMessage;
+
 
 pub async fn start_trades_redis_listener(
     market: String, 
@@ -79,13 +82,14 @@ pub async fn start_depth_redis_listener(
         match msg.get_payload::<Vec<u8>>() {
             Ok(payload) => {
                 // We send the raw Protobuf bytes to the Broadcastor
-                
-                if let Err(_) = broadcast_tx.send(payload) {
-                    // This is actually normal! It just means no one is currently 
-                    // watching this market. Don't break; keep listening for 
-                    // when the next user connects.
-                    // println!("No active subscribers for {}, skipping broadcast", market);
+                if let Ok(proto) = DepthUpdate::decode(&payload[..]) {
+                    let depth = Depth::from_proto(proto);
+                    let out_message = WsOutMessage::Depth(depth);
+                    if let Ok(bytes) = serde_json::to_vec(&out_message) {
+                        let _ = broadcast_tx.send(bytes);
+                    }
                 }
+                
             }
             Err(e) => eprintln!("❌ Redis payload error on {}: {}", market, e),
         }

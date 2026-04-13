@@ -1,4 +1,6 @@
-import { StreamType, type WsIncomingMessage } from "../types/marketTypes";
+// import { StreamType, type WsIncomingMessage } from "../types/marketTypes";
+
+import { StreamType } from "../types/marketTypes";
 
 
 const ws_url = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws"
@@ -40,7 +42,7 @@ export class SignalingManager {
         this.ws.onmessage = async (event) => {
             try {
                 const text = await event.data.text()
-                const message = JSON.parse(text) as WsIncomingMessage;
+                const message = JSON.parse(text) ;
 
 
                 
@@ -60,6 +62,12 @@ export class SignalingManager {
                         if (stream === StreamType.TICKER) {
                             console.log("stream");
                             
+                        }
+                        if (stream === StreamType.DEPTH) {
+
+                            console.log(message);
+                            
+                            callback()
                         }
                     })
                 }
