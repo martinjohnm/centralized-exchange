@@ -1,15 +1,16 @@
-import { useEffect } from "react";
-// import { AskTable } from "./AskTable";
-// import { BidTable } from "./BidTable";
+import { useEffect, useState } from "react";
+import { AskTable } from "./AskTable";
+import { BidTable } from "./BidTable";
 import { SignalingManager } from "../../utils/SignalingManager";
 import { MarketNames, StreamType } from "../../types/marketTypes";
+import type { DepthUpdate, Level } from "../../types/depthTypes";
 
 
 export const Depth = ({market} : {market: string}) => {
 
-    // const [bids, setBids] = useState<[string, string][]>();
-    // const [asks, setAsks] = useState<[string, string][]>();
-    // const [price, setPrice] = useState<string>("67");
+    const [bids, setBids] = useState<Level[]>();
+    const [asks, setAsks] = useState<Level[]>();
+    const [price, setPrice] = useState<string>("6500");
 
     const marketName = MarketNames[Number(market)];
     // for the depth update
@@ -23,8 +24,10 @@ export const Depth = ({market} : {market: string}) => {
             }
         })
 
-        SignalingManager.getInstance().registerCallback(StreamType.DEPTH, () => {
-            // console.log(data);
+        SignalingManager.getInstance().registerCallback(StreamType.DEPTH, (data: DepthUpdate) => {
+            setAsks(data.asks);
+            setBids(data.bids);
+            setPrice(data.asks[0].price)
             
         }, `${marketName}:depth`)
 
@@ -37,7 +40,7 @@ export const Depth = ({market} : {market: string}) => {
                         stream : `depth` 
                     }
             })
-            SignalingManager.getInstance().deRegisterCallback(`${marketName}:depth`, `${marketName}:depth`)
+            SignalingManager.getInstance().deRegisterCallback(StreamType.DEPTH, `${marketName}:depth`)
         }
     }, [marketName])
 
@@ -48,9 +51,9 @@ export const Depth = ({market} : {market: string}) => {
             
         </div>
         <TableHeader />
-        {/* {asks && <AskTable asks={asks} />}
+        {asks && <AskTable asks={asks} />}
         {price && <div>{price}</div>}
-        {bids && <BidTable bids={bids} />} */}
+        {bids && <BidTable bids={bids} />}
     </div>
 }
 

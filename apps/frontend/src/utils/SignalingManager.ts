@@ -63,11 +63,8 @@ export class SignalingManager {
                             console.log("stream");
                             
                         }
-                        if (stream === StreamType.DEPTH) {
-
-                            console.log(message);
-                            
-                            callback()
+                        if (stream === StreamType.DEPTH) {                            
+                            callback(message.data)
                         }
                     })
                 }

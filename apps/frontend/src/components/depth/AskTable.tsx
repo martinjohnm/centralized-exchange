@@ -1,11 +1,12 @@
+import type { Level } from "../../types/depthTypes";
 
-export const AskTable = ({ asks }: { asks: [string, string][] }) => {
+export const AskTable = ({ asks }: { asks: Level[] }) => {
     
     
     const relevantAsks = asks.slice(0, 15);
 
     return <div>
-        {relevantAsks.map(([price, quantity]) => <Ask maxTotal={Number(quantity)} key={price} price={price} quantity={quantity} total={Number(quantity)} />)}
+        {relevantAsks.map((level) => <Ask maxTotal={Number(level.price)} key={level.price} price={level.price} quantity={level.quantity} total={Number(level.quantity)} />)}
     </div>
 }
 function Ask({price, quantity, total, maxTotal}: {price: string, quantity: string, total: number, maxTotal: number}) {

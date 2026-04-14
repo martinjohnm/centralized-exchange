@@ -1,5 +1,6 @@
+import type { Level } from "../../types/depthTypes";
 
-export const BidTable = ({ bids }: {bids: [string, string][]}) => {
+export const BidTable = ({ bids }: {bids: Level[]}) => {
     
 
     const relevantBids = bids.slice(0, 15);
@@ -7,7 +8,7 @@ export const BidTable = ({ bids }: {bids: [string, string][]}) => {
     
 
     return <div>
-        {relevantBids?.map(([price, quantity]) => <Bid maxTotal={120} total={Number(quantity)} key={price} price={price} quantity={quantity} />)}
+        {relevantBids?.map((level) => <Bid maxTotal={120} total={Number(level.quantity)} key={level.price} price={level.price} quantity={level.quantity} />)}
     </div>
 }
 
