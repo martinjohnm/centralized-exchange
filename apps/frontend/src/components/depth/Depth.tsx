@@ -27,7 +27,7 @@ export const Depth = ({market} : {market: string}) => {
         SignalingManager.getInstance().registerCallback(StreamType.DEPTH, (data: DepthUpdate) => {
             setAsks(data.asks);
             setBids(data.bids);
-            setPrice(data.asks[0].price)
+            setPrice(data.bids[0].price)
             
         }, `${marketName}:depth`)
 

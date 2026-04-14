@@ -8,7 +8,7 @@ export const BidTable = ({ bids }: {bids: Level[]}) => {
     
 
     return <div>
-        {relevantBids?.map((level) => <Bid maxTotal={120} total={Number(level.quantity)} key={level.price} price={level.price} quantity={level.quantity} />)}
+        {relevantBids?.map((level) => <Bid maxTotal={Number(level.price)} total={Number(level.quantity)} key={level.price} price={level.price} quantity={level.quantity} />)}
     </div>
 }
 
