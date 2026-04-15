@@ -1,39 +1,54 @@
-# Rust Centralized Exchange (CEX) Core
+# High-Performance Rust Exchange (LOB) Core
 
-A high-performance, containerized matching engine and orderbook built with **Rust**, **Redis**, and **TypeScript**. This project simulates a real-world exchange architecture using an event-driven microservices approach.
-
----
-
-## The Architecture
-
-The system is split into five core services, all managed via **Docker Compose**:
-
-* **Matching Engine (Rust):** The high-speed core that processes orders and executes trades.
-* **Order Firer (Rust):** A strategy sidecar that simulates market liquidity by injecting orders.
-* **WebSocket Gateway (Axum/Rust):** A broadcast layer that streams real-time updates to clients.
-* **Redis:** The high-speed message bus and persistence layer.
-* **Frontend (Vite/TS):** A React-based visualization of the L2 Orderbook and Trade History.
+A distributed, low-latency Limit Order Book (LOB) and matching engine architected for high-concurrency financial transactions. This system bridges a **synchronous Axum API gateway** with an **asynchronous Rust execution kernel** using a Redis-backed event-sourced architecture.
 
 ---
 
-## One-Command Setup
+## 🏗 Key Engineering Challenges Solved
 
-Follow these steps to "hydrate" the environment and launch the entire stack.
+### 1. The "Sync-over-Async" Bridge
+* **Problem:** HTTP is synchronous, but a matching engine is asynchronous. 
+* **Solution:** Engineered a non-blocking ingress gateway that parks HTTP handlers using `oneshot` channels. The API waits for a specific `ExecutionReport` keyed to a unique `client_id` before responding, ensuring the user receives the immediate result of their trade without blocking system threads.
 
-### 1. Bootstrap Environment
-The project uses template files to manage service coordinates. Copy the examples to create your local environment manifests:
+### 2. Event-Driven Microservices Architecture
+* **State Decoupling:** Separated the **Matching Engine** (Hot Path) from the **API Gateway** (IO Path) using Redis as a high-speed message bus.
+* **Serialization:** Utilized **Protocol Buffers (Protobuf)** via `prost` for cross-service communication, minimizing payload size and CPU cycles during serialization compared to JSON.
 
-#### From the project root:
-```bash
-cp .env.example .env && cp apps/frontend/.env.example apps/frontend/.env
-```
-### 2. Build and Start (The "One-Command" Setup)
-This command triggers the Cargo workspace compilation, the Vite production build, and initializes the Redis backplane in a single pass:
+### 3. Reactive Real-Time Updates
+* **Signaling Manager:** Developed a WebSocket broadcast layer that streams incremental orderbook updates (L2) and trade executions.
+* **Hybrid Reporting:** Immediate fills return via the HTTP response path for user feedback, while subsequent "resting" order fills are broadcasted asynchronously via WebSockets to maintain sub-millisecond UI updates.
 
-```bash 
-docker compose up --build
-```
-### 3. Run 
-```bash
-docker compose up
-```
+### 4. Memory Safety & High Concurrency
+* **Ownership & Pinning:** Leveraged Rust’s strict ownership model and `tokio::pin!` to manage high-speed asynchronous Redis Pub/Sub streams safely.
+* **Thread Safety:** Utilized concurrent data structures (`DashMap`) to route engine responses to the correct pending HTTP requests with $O(1)$ complexity.
+
+---
+
+## 🛠 Tech Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **Language** | Rust (Stable) |
+| **API Gateway** | Axum / Tokio |
+| **Messaging/Bus** | Redis (Pub/Sub & List-based WAL) |
+| **Serialization** | Protobuf (Prost) |
+| **Frontend** | React / TypeScript / Tailwind CSS / Vite |
+| **Infrastructure** | Docker & Docker Compose |
+
+---
+
+## 🚦 System Workflow
+
+1. **Ingress:** Axum receives a `CreateOrder` request and generates a unique `client_id`.
+2. **Persistence:** The order is serialized into Protobuf and pushed to a Redis-based Write-Ahead Log (WAL).
+3. **Execution:** The **Matching Engine** pops the order, matches it against the internal BTreeMap-based orderbook, and generates an `ExecutionReport`.
+4. **Egress:** The report is fanned out:
+   - Sent back to the specific Axum handler to resolve the HTTP request.
+   - Broadcasted to the **Signaling Manager** for global WebSocket updates.
+
+---
+
+## 🚀 Future Roadmap (Scalability Targets)
+
+- [ ] **Durable Persistence:** Implementation of a dedicated DB-Writer service to move SQL I/O out of the execution hot-path.
+- [ ] **Redis Streams:** Transitioning from Pub/Sub to Redis Streams (XADD) for "at-least-once" delivery

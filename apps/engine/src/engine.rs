@@ -9,16 +9,18 @@ pub struct Engine {
     pub config: MarketConfig,
     pub orderbook : Orderbook,
     pub ledger : Ledger,
-    pub trade_transmitter: Sender<InternalTrade>
+    pub trade_transmitter: Sender<InternalTrade>,
+    pub report_transmitter: Sender<ExecutionReport>
 }
 
 impl Engine {
-    pub fn new(config: MarketConfig, trade_producer : Sender<InternalTrade>) -> Self {
+    pub fn new(config: MarketConfig, trade_producer : Sender<InternalTrade>, report_producer: Sender<ExecutionReport>) -> Self {
         Self { 
             config,
             orderbook : Orderbook::new(config,trade_producer.clone()),
             ledger : Ledger::new(),
-            trade_transmitter : trade_producer
+            trade_transmitter : trade_producer,
+            report_transmitter : report_producer
         }
     }
 
@@ -88,7 +90,9 @@ impl Engine {
 
                 // 4 ---- The reporing to clients logic
                 let report = self.create_report(&req, proto_trade, remaining);
-
+                if let Err(e) = self.report_transmitter.try_send(report) {
+                        eprintln!("Global telemetry lag:{}" , e);
+                    }
                 // send to the redis reponder (Targeted pub sub)
                 // This resolves the async fn in the trade placer
 
