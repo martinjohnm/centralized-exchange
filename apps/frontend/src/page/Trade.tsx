@@ -1,8 +1,8 @@
 import { useParams } from "react-router-dom";
-import { Appbar } from "../components/Appbar";
 import { useEffect } from "react";
 import { Depth } from "../components/depth/Depth";
 import { TradeView } from "../components/TradeView";
+import { SwapUI } from "../components/SwapUI";
 
 export const Trade = () => {
 
@@ -16,7 +16,6 @@ export const Trade = () => {
 
   return <div className="flex flex-row flex-1">
         <div className="flex flex-col flex-1">
-            <Appbar/>
             <div className="flex flex-row h-230 border-y border-slate-800">
                 <div className="flex flex-col flex-1">
                     <TradeView market={market}/>
@@ -29,7 +28,7 @@ export const Trade = () => {
         <div className="w-2.5 flex-col border-slate-800 border-l"></div>
         <div>
             <div className="flex flex-col w-62.5">
-                {/* <SwapUI market={market as string} /> */}
+                <SwapUI market={market as string} />
             </div>
         </div>
     </div>

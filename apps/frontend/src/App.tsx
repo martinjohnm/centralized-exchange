@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Landing } from "./page/Landing";
 import { Trade } from "./page/Trade";
+import { AppLayout } from "./components/AppLayout";
 
 
 function App() {
@@ -8,8 +9,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Landing/>}/>
-        <Route path="/trade/:market" element={<Trade/>}/>
+        <Route path="/" element={<AppLayout><Landing/></AppLayout>}/>
+        <Route path="/trade/:market" element={<AppLayout><Trade/></AppLayout>}/>
       </Routes>
     </BrowserRouter>
   )

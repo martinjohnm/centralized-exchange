@@ -18,12 +18,6 @@ export const Appbar = () => {
                     Trade
                 </div> */}
             </div>
-            <div className="flex">
-                <div className="px-2 mr-2">
-                    <button className="bg-green-500 p-2">Deposit</button>
-                    <button className="bg-red-500 p-2">Withdraw</button>
-                </div>
-            </div>
         </div>
     </div>
 }
