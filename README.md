@@ -52,3 +52,27 @@ A distributed, low-latency Limit Order Book (LOB) and matching engine architecte
 
 - [ ] **Durable Persistence:** Implementation of a dedicated DB-Writer service to move SQL I/O out of the execution hot-path.
 - [ ] **Redis Streams:** Transitioning from Pub/Sub to Redis Streams (XADD) for "at-least-once" delivery
+
+
+
+## One-Command Setup
+
+Follow these steps to "hydrate" the environment and launch the entire stack.
+
+### 1. Bootstrap Environment
+The project uses template files to manage service coordinates. Copy the examples to create your local environment manifests:
+
+#### From the project root:
+```bash
+cp .env.example .env && cp apps/frontend/.env.example apps/frontend/.env
+```
+### 2. Build and Start (The "One-Command" Setup)
+This command triggers the Cargo workspace compilation, the Vite production build, and initializes the Redis backplane in a single pass:
+
+```bash 
+docker compose up --build
+```
+### 3. Run 
+```bash
+docker compose up
+```
