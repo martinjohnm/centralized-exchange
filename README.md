@@ -47,6 +47,13 @@ A distributed, low-latency Limit Order Book (LOB) and matching engine architecte
    - Broadcasted to the **Signaling Manager** for global WebSocket updates.
 
 ---
+## 🏗 System Architecture
+
+<p align="center">
+  <img src="exchange-design.png" alt="System Architecture Diagram" width="800px">
+</p>
+
+> **Architectural Overview:** The diagram above illustrates the decoupled nature of the exchange. The **Matching Engine** operates as a standalone execution kernel, while the **API Gateway** manages state correlation between synchronous HTTP requests and the asynchronous event bus.
 
 ## 🚀 Future Roadmap (Scalability Targets)
 
