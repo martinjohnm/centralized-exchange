@@ -7,7 +7,7 @@ mod ledger;
 mod publisher;
 
 use tokio::sync::mpsc;
-use crate::{model::{DepthResponse, InternalTrade}, publisher::RedisPublisher, utils::{MarketConfig, load_markets_from_proto}, worker::Worker};
+use crate::{model::{DepthResponse, InternalTrade, exchange_proto::ExecutionReport}, publisher::RedisPublisher, utils::{MarketConfig, load_markets_from_proto}, worker::Worker};
 use std::thread;
 use dotenvy::dotenv;
 use std::env;
@@ -27,12 +27,13 @@ async fn main() {
     // 1. Create the central "Trade pipe" 
     let (trade_tx, trade_rx) = mpsc::channel::<InternalTrade>(10000);
     let (depth_tx, depth_rx) = mpsc::channel::<DepthResponse>(10000);
+    let (report_tx, report_rx) = mpsc::channel::<ExecutionReport>(10000);
 
     // 2. Create a green thread for broadcastor (which holds the single receiver and listens and broadcasts 
     //    events from various markets in which each markets clones a copy of the transmitter to send events)
     let redis_url_to_redis_publisher = redis_url.to_string().clone();
     tokio::spawn(async move {
-        let publisher = RedisPublisher::new(trade_rx,depth_rx, redis_url_to_redis_publisher);
+        let publisher = RedisPublisher::new(trade_rx,depth_rx,report_rx, redis_url_to_redis_publisher);
         publisher.run().await;
     });
 

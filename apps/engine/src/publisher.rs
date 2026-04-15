@@ -4,7 +4,7 @@ use prost::Message;
 use redis::AsyncCommands;
 use tokio::{net::unix::pipe::Receiver, sync::mpsc};
 
-use crate::model::{DepthResponse, InternalTrade, exchange_proto::{DepthUpdate, Level, MarketId, Trade}};
+use crate::model::{DepthResponse, InternalTrade, exchange_proto::{DepthUpdate, ExecutionReport, Level, MarketId, Trade}};
 
 
 
@@ -12,6 +12,7 @@ use crate::model::{DepthResponse, InternalTrade, exchange_proto::{DepthUpdate, L
 pub struct RedisPublisher {
     pub trade_receiver : mpsc::Receiver<InternalTrade>,
     pub depth_receiver : mpsc::Receiver<DepthResponse>,
+    pub report_receiver: mpsc::Receiver<ExecutionReport>,
     pub redis_url : String,
     pub trade_channels : HashMap<MarketId , &'static str>,
     pub depth_channels : HashMap<MarketId, &'static str>,
@@ -19,7 +20,7 @@ pub struct RedisPublisher {
 }
 
 impl RedisPublisher {
-    pub fn new(trade_receiver :mpsc::Receiver<InternalTrade>, depth_receiver : mpsc::Receiver<DepthResponse>, redis_url: String) -> Self {
+    pub fn new(trade_receiver :mpsc::Receiver<InternalTrade>, depth_receiver : mpsc::Receiver<DepthResponse>,report_receiver: mpsc::Receiver<ExecutionReport>, redis_url: String) -> Self {
 
         let mut trade_channels = HashMap::new();
 
@@ -34,6 +35,7 @@ impl RedisPublisher {
         Self { 
             trade_receiver,
             depth_receiver,
+            report_receiver,
             redis_url,
             trade_channels,
             depth_channels,
@@ -113,6 +115,23 @@ impl RedisPublisher {
                     pipe.publish(channel, &payload);
                     pending = true;
                 }
+
+                // 3rd Arm of the select! block
+                Some(report) = self.report_receiver.recv() => {
+                    let mut payload = Vec::new();
+                    if let Err(e) = report.encode(&mut payload) {
+                        eprintln!("Failed to encode execution report: {}", e);
+                    }
+
+                    // Dynamic channel addressing: response:userId:clientId
+                    let channel = report.client_id.to_string();
+                    
+                    pipe.publish(channel, &payload);
+                    // Note: We usually don't LPUSH reports to the DB queue because 
+                    // the trades (the state change) are already being pushed there.
+                    pending = true;
+                }
+
             }
 
             if pending {

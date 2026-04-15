@@ -88,3 +88,21 @@ enum MarketId {
     BTC_USDT = 1; // Base: BTC (1), Quote: USDT (3)
     ETH_USDT = 2; // Base: ETH (2), Quote: USDT (3)
 }
+
+// Order status 
+enum OrderStatus {
+    PLACED = 0;
+    PARTIALLY_FILLED = 1;
+    FILLED = 2;
+    REJECTED = 3;
+    CANCELLED = 4;
+}
+
+message ExecutionReport {
+    uint64 client_id = 1;
+    uint64 user_id = 2;
+    OrderStatus status = 3;
+    repeated Trade trades = 4; // Zero if just PLACED, multiple if matched
+    string remaining_quantity = 5;
+    string error_message = 6; // Only populated if status == REJECTED
+}
