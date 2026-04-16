@@ -15,15 +15,15 @@ export const usePlaceOrder = () => {
 
         // This object now perfectly matches your Rust Protobuf definition
         const request: ExchangeRequest = {
-            userId: uiOrder.userId.toString(), // forceLong=string makes this a string
-            timestamp: Date.now().toString(),
+            userId: uiOrder.userId, // forceLong=string makes this a string
+            timestamp: Date.now(),
             create: {
                 market : uiOrder.market,
                 price: uiOrder.price.toString(),
                 quantity: uiOrder.quantity.toString(),
                 side: uiOrder.side                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ,
                 orderType: OrderType.LIMIT,
-                clientId: Date.now().toString(), // The 64-bit ID safe as a string
+                clientId: Date.now(), // The 64-bit ID safe as a string
             }
         };
 
