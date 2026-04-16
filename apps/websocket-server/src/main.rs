@@ -1,4 +1,4 @@
-use std::{sync::Arc, vec};
+use std::{env, sync::Arc, vec};
 
 use axum::{Router, extract::{State, WebSocketUpgrade}, response::Response, routing::get};
 
@@ -18,8 +18,11 @@ mod redis;
 #[tokio::main]
 async fn main() {
 
+
+    let redis_url = env::var("REDIS_URL")
+        .expect("REDIS_URL must be set in .env or system environment");
     // 1. state initialization
-    let state = Arc::new(AppState::new());
+    let state = Arc::new(AppState::new(redis_url));
 
     // 2. Define which markets supports
     let markets = vec!["btcusdt".to_string(), "ethusdt".to_string()];

@@ -69,6 +69,10 @@ pub enum WsRequest {
         market: String,
         stream: String 
     },
+    // This is for private updates
+    UserUpdates { 
+        user_id: String 
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
