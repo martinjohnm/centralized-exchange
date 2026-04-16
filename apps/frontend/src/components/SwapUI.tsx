@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePlaceOrder } from "../hooks/usePlaceOrder";
 
 export function SwapUI({ market }: {market: string}) {
 
@@ -7,6 +8,8 @@ export function SwapUI({ market }: {market: string}) {
     // const [amount, setAmount] = useState('');
     const [activeTab, setActiveTab] = useState('buy');
     const [type, setType] = useState('limit');
+
+    const {placeOrder, loading} = usePlaceOrder();
 
     return (
     <div>

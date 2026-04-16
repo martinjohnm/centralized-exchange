@@ -124,8 +124,7 @@ impl RedisPublisher {
                     }
 
                     // Dynamic channel addressing: response:userId:clientId
-                    let channel = report.client_id.to_string();
-                    
+                    let channel = format!("user:{}", report.user_id);                    
                     pipe.publish(channel, &payload);
                     // Note: We usually don't LPUSH reports to the DB queue because 
                     // the trades (the state change) are already being pushed there.
