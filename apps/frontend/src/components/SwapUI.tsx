@@ -74,7 +74,7 @@ export function SwapUI({ market }: {market: string}) {
                             </div>
                         </div>
                     </div>
-                    <button type="button" className="font-semibold  focus:ring-blue-200 focus:none focus:outline-none text-center h-12 rounded-xl text-base px-4 py-2 my-4 bg-greenPrimaryButtonBackground text-greenPrimaryButtonText active:scale-98" data-rac="">Buy</button>
+                    <button type="button" className="font-semibold  focus:ring-blue-200 focus:none focus:outline-none text-center h-12 rounded-xl text-base px-4 py-2 my-4 bg-green-400 hover:cursor-pointer hover:bg-green-500 active:scale-98" data-rac="">Buy</button>
                     <div className="flex flex-row mt-1">
                         <div className="flex flex-row gap-2">
                             <div className="flex items-center">

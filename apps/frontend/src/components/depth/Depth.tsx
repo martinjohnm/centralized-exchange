@@ -10,7 +10,7 @@ export const Depth = ({market} : {market: string}) => {
 
     const [bids, setBids] = useState<Level[]>();
     const [asks, setAsks] = useState<Level[]>();
-    const [price, setPrice] = useState<string>("6500");
+    const [price, setPrice] = useState<string | null>(null);
 
     const marketName = MarketNames[Number(market)];
     // for the depth update
