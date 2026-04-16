@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { AskTable } from "./AskTable";
 import { BidTable } from "./BidTable";
 import { SignalingManager } from "../../utils/SignalingManager";
-import { MarketNames, StreamType } from "../../types/marketTypes";
-import type { DepthUpdate, Level } from "../../types/depthTypes";
+import { MarketNames } from "../../types/marketTypes";
+import { DepthUpdate, Level, StreamType } from "../../generated/exchange";
 
 
 export const Depth = ({market} : {market: string}) => {

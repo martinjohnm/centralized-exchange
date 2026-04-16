@@ -1,9 +1,10 @@
-import { CandleTime, MarketNames, StreamType } from "../types/marketTypes";
+import { CandleTime, MarketNames } from "../types/marketTypes";
 import { useEffect, useRef, useState } from "react";
 import { getKlines } from "../utils/httpClient";
 import { SignalingManager } from "../utils/SignalingManager";
 import type { CandlestickData } from "lightweight-charts";
 import { ChartManager } from "../utils/ChartManager";
+import { Candle, StreamType } from "../generated/exchange";
 
 
 const INITIAL_CANDLE_COUNT = 200;
@@ -58,7 +59,7 @@ export const TradeView = ({market} : {market: string}) => {
 
                 setChartManageer(chartManager)
 
-                SignalingManager.getInstance().registerCallback(StreamType.CANDLE, (data: any) => {
+                SignalingManager.getInstance().registerCallback(StreamType.CANDLE, (data: Candle) => {
                     
 
                     // 1. Convert Microseconds to Seconds (Number)

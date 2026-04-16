@@ -10,22 +10,20 @@ export const usePlaceOrder = () => {
     const [loading, setLoading] = useState(false);
 
 
-    const placeOrder = async (uiOrder: {market: MarketId, price: number; quantity: number;  side: Side }) => {
+    const placeOrder = async (uiOrder: {userId : number, market: MarketId, price: number; quantity: number;  side: Side }) => {
         setLoading(true);
-
-        const userId = 123; // In reality, get this from your Auth context
 
         // This object now perfectly matches your Rust Protobuf definition
         const request: ExchangeRequest = {
-            userId: userId, // forceLong=string makes this a string
-            timestamp: Date.now(),
+            userId: uiOrder.userId.toString(), // forceLong=string makes this a string
+            timestamp: Date.now().toString(),
             create: {
                 market : uiOrder.market,
                 price: uiOrder.price.toString(),
                 quantity: uiOrder.quantity.toString(),
                 side: uiOrder.side                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ,
                 orderType: OrderType.LIMIT,
-                clientId: Date.now(), // The 64-bit ID safe as a string
+                clientId: Date.now().toString(), // The 64-bit ID safe as a string
             }
         };
 

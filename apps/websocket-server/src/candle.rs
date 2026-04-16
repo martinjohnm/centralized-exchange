@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 
 #[derive(Default, Clone, Serialize, Debug, Deserialize)]
-pub struct Candle {
+pub struct InternalCandle {
     pub open : f64,
     pub high : f64,
     pub low  : f64,
@@ -12,7 +12,7 @@ pub struct Candle {
     pub timestamp : u64
 }
 
-impl Candle {
+impl InternalCandle {
 
     // this is called when a new trade comes 
 

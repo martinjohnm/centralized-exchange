@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePlaceOrder } from "../hooks/usePlaceOrder";
-import { MarketId, Side } from "../generated/exchange";
+import { ExecutionReport, MarketId, Side, StreamType } from "../generated/exchange";
+import { SignalingManager } from "../utils/SignalingManager";
+import { MarketNames } from "../types/marketTypes";
 
 export function SwapUI({ market }: {market: string}) {
 
@@ -12,9 +14,11 @@ export function SwapUI({ market }: {market: string}) {
     const [price, setPrice] = useState<number>(65000);
     const [quantity, setQuantity] = useState<number>(100);
     const {placeOrder, loading} = usePlaceOrder();
+    const userId= 123;
 
     const handleSubmit = async () => {
         const orderData = {
+            userId,
             market: MarketId.BTC_USDT,
             price,
             quantity,
@@ -24,6 +28,25 @@ export function SwapUI({ market }: {market: string}) {
         // This will set loading to true until the Axum API responds
         await placeOrder(orderData);
     };
+
+    useEffect(() => {
+        SignalingManager.getInstance().sendMessage({
+            "method": "userupdates",
+            "params": {
+                "user_id": "123"
+            }
+        })
+
+        SignalingManager.getInstance().registerCallback(StreamType.USER_UPDATES, (data: ExecutionReport) => {
+            console.log(data);
+            
+        }, `${MarketNames[Number(market)]}:userupdates`)
+
+        return () => {
+            // the userupdates cleans automatically just deregister
+            SignalingManager.getInstance().deRegisterCallback(StreamType.USER_UPDATES, `${MarketNames[Number(market)]}:userupdates`)
+        }
+    }, [market, userId])
 
     return (
     <div>

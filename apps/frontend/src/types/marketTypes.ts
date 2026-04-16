@@ -1,3 +1,4 @@
+import type { ExecutionReport } from "../generated/exchange";
 import { MarketId } from "../proto/exchange";
 
 
@@ -19,7 +20,8 @@ export const StreamType = {
     CANDLE: "candle",
     TRADE: "trade",
     TICKER: "ticker",
-    DEPTH : "depth"
+    DEPTH : "depth",
+    USER_UPDATES : "userupdates"
 } as const;
 
 
@@ -66,4 +68,5 @@ export type WsIncomingMessage =
     | { stream: typeof StreamType.CANDLE; data: CandleData }
     | { stream: typeof StreamType.TRADE; data: TradeData }
     | { stream: typeof StreamType.TICKER, data: TickerData}
-    | { stream: typeof StreamType.DEPTH, data: DepthData };
+    | { stream: typeof StreamType.DEPTH, data: DepthData }
+    | { stream: typeof StreamType.USER_UPDATES, data: ExecutionReport };

@@ -106,3 +106,33 @@ message ExecutionReport {
     string remaining_quantity = 5;
     string error_message = 6; // Only populated if status == REJECTED
 }
+
+// Websocket updates types 
+message Candle {
+    string open = 2;
+    string high = 3;
+    string low = 4;
+    string close = 5;
+    string volume = 6;
+    uint64 timestamp = 7; // Start time of the bucket
+    
+}
+
+enum StreamType {
+    TRADE = 0;
+    CANDLE = 1;
+    TICKER = 2;
+    DEPTH = 3;
+    USER_UPDATES = 4;
+}
+
+// WsOutMessage wrapper
+message WsOutMessage {
+    StreamType stream = 1; 
+    oneof data {
+        Trade trade = 2;
+        Candle candle = 3;
+        DepthUpdate depth = 4;
+        ExecutionReport execution_report = 5;
+    }
+}

@@ -1,6 +1,6 @@
 // import { StreamType, type WsIncomingMessage } from "../types/marketTypes";
 
-import { StreamType } from "../types/marketTypes";
+import { StreamType, WsOutMessage } from "../generated/exchange";
 
 
 const ws_url = import.meta.env.VITE_WS_URL || "ws://localhost:8080/ws"
@@ -9,7 +9,7 @@ export class SignalingManager {
     private ws : WebSocket;
     private static instance: SignalingManager;
     private bufferedMessages : any[] = [];
-    private callbacks: Map<string, { callback: any, id : string }[]>;
+    private callbacks: Map<StreamType, { callback: any, id : string }[]>;
     private id : number;
     private initialized : boolean = false;
 
@@ -40,40 +40,48 @@ export class SignalingManager {
         }
 
         this.ws.onmessage = async (event) => {
+            
             try {
-                const text = await event.data.text()
-                const message = JSON.parse(text) ;
+                // 1. Convert the incoming Blob to a Uint8Array
+                const buffer = event.data instanceof Blob 
+                    ? await event.data.arrayBuffer() 
+                    : event.data;
+                const uint8Array = new Uint8Array(buffer);
 
+                // 2. Decode the TOP-LEVEL wrapper (the WsOutMessage)
+                const message = WsOutMessage.decode(uint8Array);
+                
+                // 3. Extract the metadata (stream type and market)
+                const streamType = message.stream; // This is now your Enum (0, 1, 2...)
 
                 
-                const stream = message.stream;
-
-                if (this.callbacks.has(stream)) {
-                    this.callbacks.get(stream)?.forEach(({callback} : {callback: any}) => {
-                        if (stream === StreamType.CANDLE) {
-                            callback(message.data)
-                        } 
-
-                        if (stream === StreamType.TRADE) {
-                            console.log("hi trade");
-                            
-                        }
-
-                        if (stream === StreamType.TICKER) {
-                            console.log("stream");
-                            
-                        }
-                        if (stream === StreamType.DEPTH) {                            
-                            callback(message.data)
-                        }
-                    })
+                switch (streamType) {
+                    case StreamType.CANDLE:
+                        this.callbacks.get(streamType)?.forEach(({callback} : {callback: any}) => {
+                            callback(message.candle)
+                        })
+                        break;
+                    case StreamType.DEPTH: 
+                        this.callbacks.get(streamType)?.forEach(({callback} : {callback: any}) => {
+                            callback(message.depth)
+                        })
+                        break;
+                    case StreamType.USER_UPDATES:
+                        this.callbacks.get(streamType)?.forEach(({callback} : {callback: any}) => {
+                            callback(message.executionReport)
+                        })
+                        break;
+                    default:
+                        console.warn("Unknown stream type received:", message.stream);
                 }
                 
-            } catch(e) {
-                console.error("Failed to decode binary message:", e);
+            } catch (e) {
+                console.error("Failed to decode unified binary message:", e);
             }
-        }
+            };
     }
+
+    
 
     sendMessage(message: any) {
         const messageTosend = {
@@ -89,11 +97,11 @@ export class SignalingManager {
         this.ws.send(JSON.stringify(messageTosend))
     }
 
-    async registerCallback(type : string, callback: any, id : string) {
+    async registerCallback(type : StreamType, callback: any, id : string) {
         this.callbacks.set(type, (this.callbacks.get(type) || []).concat({callback, id}))
     }
 
-    async deRegisterCallback(type: string, id : string) {
+    async deRegisterCallback(type: StreamType, id : string) {
         if (this.callbacks.has(type)) {
             const newCallbacks = this.callbacks.get(type)?.filter(callback => callback.id !== id)?? []
             this.callbacks.set(type, newCallbacks)

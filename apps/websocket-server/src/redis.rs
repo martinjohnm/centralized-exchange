@@ -3,7 +3,7 @@ use dotenvy::dotenv;
 use tokio::sync::broadcast;
 use std::env;
 
-use crate::model::{Depth, WsOutMessage, exchange_proto::DepthUpdate};
+use crate::model::{ exchange_proto::{DepthUpdate, StreamType, WsOutMessage, ws_out_message::Data}};
 use prost::Message as ProtoMessage;
 
 
@@ -83,10 +83,13 @@ pub async fn start_depth_redis_listener(
             Ok(payload) => {
                 // We send the raw Protobuf bytes to the Broadcastor
                 if let Ok(proto) = DepthUpdate::decode(&payload[..]) {
-                    let depth = Depth::from_proto(proto);
-                    let out_message = WsOutMessage::Depth(depth);
-                    if let Ok(bytes) = serde_json::to_vec(&out_message) {
-                        let _ = broadcast_tx.send(bytes);
+                    let out_message = WsOutMessage {
+                        stream : StreamType::Depth as i32,
+                        data : Some(Data::Depth(proto))
+                    };
+                    let mut payload = Vec::new();
+                    if out_message.encode(&mut payload).is_ok() {
+                        let _ = broadcast_tx.send(payload);
                     }
                 }
                 

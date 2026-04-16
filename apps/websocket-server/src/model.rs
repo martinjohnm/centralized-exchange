@@ -1,7 +1,7 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 
-use crate::{candle::Candle, model::exchange_proto::{DepthUpdate, Trade}};
+use crate::{model::exchange_proto::{DepthUpdate, Trade}};
 
 
 
@@ -75,25 +75,25 @@ pub enum WsRequest {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(tag = "stream", content = "data", rename_all = "lowercase")]
-pub enum WsOutMessage {
-    // Realtime trade updates
-    Trade(InternalTrade),
+// #[derive(Debug, Serialize, Deserialize)]
+// #[serde(tag = "stream", content = "data", rename_all = "lowercase")]
+// pub enum WsOutMessage {
+//     // Realtime trade updates
+//     Trade(InternalTrade),
 
-    // the ohlcv
-    Candle(Candle),
+//     // the ohlcv
+//     Candle(Candle),
 
-    // Ticker 
-    Ticker {
-        market : String, 
-        last_price : f64,
-        price_change_percent: f64,
-        volume_24h : f64
-    },
+//     // Ticker 
+//     Ticker {
+//         market : String, 
+//         last_price : f64,
+//         price_change_percent: f64,
+//         volume_24h : f64
+//     },
 
-    Depth(Depth)
-}
+//     Depth(Depth)
+// }
 
 
 // =========== Depth event ==========================
