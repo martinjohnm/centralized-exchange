@@ -1,19 +1,24 @@
 use std::io::Result;
 
 fn main() -> Result<()> {
-    // 1. Tell Cargo to re-run if the proto file changes
     println!("cargo:rerun-if-changed=../../proto/exchange.proto");
 
-    // 2. Configure prost to add Serde traits
     let mut config = prost_build::Config::new();
     
-    // This adds #[derive(serde::Serialize, serde::Deserialize)] to all generated types
+    // 1. Add Serde traits to all types
     config.type_attribute(".", "#[derive(serde::Serialize, serde::Deserialize)]");
 
-    // 3. Compile the proto file using the config
+    // 2. Add CamelCase renaming globally 
+    // This allows the JSON to use "userId" instead of "user_id"
+    config.type_attribute(".", "#[serde(rename_all = \"camelCase\")]");
+
+    // 3. Flatten the 'action' field in ExchangeRequest
+    // This removes the need for the "action": { ... } wrapper in your JSON
+    config.field_attribute("exchange.ExchangeRequest.action", "#[serde(flatten)]");
+
     config.compile_protos(
-        &["../../proto/exchange.proto"], // Your proto file
-        &["../../proto/"]                // The include directory
+        &["../../proto/exchange.proto"],
+        &["../../proto/"]
     )?;
 
     Ok(())

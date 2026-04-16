@@ -215,9 +215,9 @@ export function orderStatusToJSON(object: OrderStatus): string {
 
 /** Separate the Envelope from the Payload */
 export interface ExchangeRequest {
-  userId: string;
+  userId: number;
   /** Critical for measuring latency (T1) */
-  timestamp: string;
+  timestamp: number;
   create?: CreateOrder | undefined;
   cancel?: CancelOrder | undefined;
   cancelAll?: CancelAll | undefined;
@@ -231,14 +231,14 @@ export interface CreateOrder {
   side: Side;
   orderType: OrderType;
   /** For your MM mapping */
-  clientId: string;
+  clientId: number;
 }
 
 export interface CancelOrder {
   market: MarketId;
   /** The engine tries client_id first, then engine_id */
-  clientId: string;
-  engineId: string;
+  clientId: number;
+  engineId: number;
 }
 
 export interface CancelAll {
@@ -250,13 +250,13 @@ export interface Deposit {
   asset: AssetId;
   amount: string;
   /** For idempotency */
-  txId: string;
+  txId: number;
 }
 
 /** ====== OUT TYPES ========================================== */
 export interface Trade {
-  makerId: string;
-  takerId: string;
+  makerId: number;
+  takerId: number;
   /** "100.50" */
   price: string;
   /** "0.001" */
@@ -264,7 +264,7 @@ export interface Trade {
   /** "buy" or "sell" */
   takerSide: Side;
   makerSide: Side;
-  timestamp: string;
+  timestamp: number;
   market: MarketId;
   base: AssetId;
   quote: AssetId;
@@ -284,12 +284,12 @@ export interface DepthUpdate {
   bids: Level[];
   /** Sell side (Sorted Low -> High) */
   asks: Level[];
-  timestamp: string;
+  timestamp: number;
 }
 
 export interface ExecutionReport {
-  clientId: string;
-  userId: string;
+  clientId: number;
+  userId: number;
   status: OrderStatus;
   /** Zero if just PLACED, multiple if matched */
   trades: Trade[];
@@ -299,22 +299,15 @@ export interface ExecutionReport {
 }
 
 function createBaseExchangeRequest(): ExchangeRequest {
-  return {
-    userId: "0",
-    timestamp: "0",
-    create: undefined,
-    cancel: undefined,
-    cancelAll: undefined,
-    deposit: undefined,
-  };
+  return { userId: 0, timestamp: 0, create: undefined, cancel: undefined, cancelAll: undefined, deposit: undefined };
 }
 
 export const ExchangeRequest: MessageFns<ExchangeRequest> = {
   encode(message: ExchangeRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== "0") {
+    if (message.userId !== 0) {
       writer.uint32(8).uint64(message.userId);
     }
-    if (message.timestamp !== "0") {
+    if (message.timestamp !== 0) {
       writer.uint32(16).uint64(message.timestamp);
     }
     if (message.create !== undefined) {
@@ -344,7 +337,7 @@ export const ExchangeRequest: MessageFns<ExchangeRequest> = {
             break;
           }
 
-          message.userId = reader.uint64().toString();
+          message.userId = longToNumber(reader.uint64());
           continue;
         }
         case 2: {
@@ -352,7 +345,7 @@ export const ExchangeRequest: MessageFns<ExchangeRequest> = {
             break;
           }
 
-          message.timestamp = reader.uint64().toString();
+          message.timestamp = longToNumber(reader.uint64());
           continue;
         }
         case 3: {
@@ -399,11 +392,11 @@ export const ExchangeRequest: MessageFns<ExchangeRequest> = {
   fromJSON(object: any): ExchangeRequest {
     return {
       userId: isSet(object.userId)
-        ? globalThis.String(object.userId)
+        ? globalThis.Number(object.userId)
         : isSet(object.user_id)
-        ? globalThis.String(object.user_id)
-        : "0",
-      timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : "0",
+        ? globalThis.Number(object.user_id)
+        : 0,
+      timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
       create: isSet(object.create) ? CreateOrder.fromJSON(object.create) : undefined,
       cancel: isSet(object.cancel) ? CancelOrder.fromJSON(object.cancel) : undefined,
       cancelAll: isSet(object.cancelAll)
@@ -417,11 +410,11 @@ export const ExchangeRequest: MessageFns<ExchangeRequest> = {
 
   toJSON(message: ExchangeRequest): unknown {
     const obj: any = {};
-    if (message.userId !== "0") {
-      obj.userId = message.userId;
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
     }
-    if (message.timestamp !== "0") {
-      obj.timestamp = message.timestamp;
+    if (message.timestamp !== 0) {
+      obj.timestamp = Math.round(message.timestamp);
     }
     if (message.create !== undefined) {
       obj.create = CreateOrder.toJSON(message.create);
@@ -443,8 +436,8 @@ export const ExchangeRequest: MessageFns<ExchangeRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<ExchangeRequest>, I>>(object: I): ExchangeRequest {
     const message = createBaseExchangeRequest();
-    message.userId = object.userId ?? "0";
-    message.timestamp = object.timestamp ?? "0";
+    message.userId = object.userId ?? 0;
+    message.timestamp = object.timestamp ?? 0;
     message.create = (object.create !== undefined && object.create !== null)
       ? CreateOrder.fromPartial(object.create)
       : undefined;
@@ -462,7 +455,7 @@ export const ExchangeRequest: MessageFns<ExchangeRequest> = {
 };
 
 function createBaseCreateOrder(): CreateOrder {
-  return { market: 0, price: "", quantity: "", side: 0, orderType: 0, clientId: "0" };
+  return { market: 0, price: "", quantity: "", side: 0, orderType: 0, clientId: 0 };
 }
 
 export const CreateOrder: MessageFns<CreateOrder> = {
@@ -482,7 +475,7 @@ export const CreateOrder: MessageFns<CreateOrder> = {
     if (message.orderType !== 0) {
       writer.uint32(40).int32(message.orderType);
     }
-    if (message.clientId !== "0") {
+    if (message.clientId !== 0) {
       writer.uint32(48).uint64(message.clientId);
     }
     return writer;
@@ -540,7 +533,7 @@ export const CreateOrder: MessageFns<CreateOrder> = {
             break;
           }
 
-          message.clientId = reader.uint64().toString();
+          message.clientId = longToNumber(reader.uint64());
           continue;
         }
       }
@@ -564,10 +557,10 @@ export const CreateOrder: MessageFns<CreateOrder> = {
         ? orderTypeFromJSON(object.order_type)
         : 0,
       clientId: isSet(object.clientId)
-        ? globalThis.String(object.clientId)
+        ? globalThis.Number(object.clientId)
         : isSet(object.client_id)
-        ? globalThis.String(object.client_id)
-        : "0",
+        ? globalThis.Number(object.client_id)
+        : 0,
     };
   },
 
@@ -588,8 +581,8 @@ export const CreateOrder: MessageFns<CreateOrder> = {
     if (message.orderType !== 0) {
       obj.orderType = orderTypeToJSON(message.orderType);
     }
-    if (message.clientId !== "0") {
-      obj.clientId = message.clientId;
+    if (message.clientId !== 0) {
+      obj.clientId = Math.round(message.clientId);
     }
     return obj;
   },
@@ -604,13 +597,13 @@ export const CreateOrder: MessageFns<CreateOrder> = {
     message.quantity = object.quantity ?? "";
     message.side = object.side ?? 0;
     message.orderType = object.orderType ?? 0;
-    message.clientId = object.clientId ?? "0";
+    message.clientId = object.clientId ?? 0;
     return message;
   },
 };
 
 function createBaseCancelOrder(): CancelOrder {
-  return { market: 0, clientId: "0", engineId: "0" };
+  return { market: 0, clientId: 0, engineId: 0 };
 }
 
 export const CancelOrder: MessageFns<CancelOrder> = {
@@ -618,10 +611,10 @@ export const CancelOrder: MessageFns<CancelOrder> = {
     if (message.market !== 0) {
       writer.uint32(8).int32(message.market);
     }
-    if (message.clientId !== "0") {
+    if (message.clientId !== 0) {
       writer.uint32(16).uint64(message.clientId);
     }
-    if (message.engineId !== "0") {
+    if (message.engineId !== 0) {
       writer.uint32(24).uint64(message.engineId);
     }
     return writer;
@@ -647,7 +640,7 @@ export const CancelOrder: MessageFns<CancelOrder> = {
             break;
           }
 
-          message.clientId = reader.uint64().toString();
+          message.clientId = longToNumber(reader.uint64());
           continue;
         }
         case 3: {
@@ -655,7 +648,7 @@ export const CancelOrder: MessageFns<CancelOrder> = {
             break;
           }
 
-          message.engineId = reader.uint64().toString();
+          message.engineId = longToNumber(reader.uint64());
           continue;
         }
       }
@@ -671,15 +664,15 @@ export const CancelOrder: MessageFns<CancelOrder> = {
     return {
       market: isSet(object.market) ? marketIdFromJSON(object.market) : 0,
       clientId: isSet(object.clientId)
-        ? globalThis.String(object.clientId)
+        ? globalThis.Number(object.clientId)
         : isSet(object.client_id)
-        ? globalThis.String(object.client_id)
-        : "0",
+        ? globalThis.Number(object.client_id)
+        : 0,
       engineId: isSet(object.engineId)
-        ? globalThis.String(object.engineId)
+        ? globalThis.Number(object.engineId)
         : isSet(object.engine_id)
-        ? globalThis.String(object.engine_id)
-        : "0",
+        ? globalThis.Number(object.engine_id)
+        : 0,
     };
   },
 
@@ -688,11 +681,11 @@ export const CancelOrder: MessageFns<CancelOrder> = {
     if (message.market !== 0) {
       obj.market = marketIdToJSON(message.market);
     }
-    if (message.clientId !== "0") {
-      obj.clientId = message.clientId;
+    if (message.clientId !== 0) {
+      obj.clientId = Math.round(message.clientId);
     }
-    if (message.engineId !== "0") {
-      obj.engineId = message.engineId;
+    if (message.engineId !== 0) {
+      obj.engineId = Math.round(message.engineId);
     }
     return obj;
   },
@@ -703,8 +696,8 @@ export const CancelOrder: MessageFns<CancelOrder> = {
   fromPartial<I extends Exact<DeepPartial<CancelOrder>, I>>(object: I): CancelOrder {
     const message = createBaseCancelOrder();
     message.market = object.market ?? 0;
-    message.clientId = object.clientId ?? "0";
-    message.engineId = object.engineId ?? "0";
+    message.clientId = object.clientId ?? 0;
+    message.engineId = object.engineId ?? 0;
     return message;
   },
 };
@@ -768,7 +761,7 @@ export const CancelAll: MessageFns<CancelAll> = {
 };
 
 function createBaseDeposit(): Deposit {
-  return { asset: 0, amount: "", txId: "0" };
+  return { asset: 0, amount: "", txId: 0 };
 }
 
 export const Deposit: MessageFns<Deposit> = {
@@ -779,7 +772,7 @@ export const Deposit: MessageFns<Deposit> = {
     if (message.amount !== "") {
       writer.uint32(18).string(message.amount);
     }
-    if (message.txId !== "0") {
+    if (message.txId !== 0) {
       writer.uint32(24).uint64(message.txId);
     }
     return writer;
@@ -813,7 +806,7 @@ export const Deposit: MessageFns<Deposit> = {
             break;
           }
 
-          message.txId = reader.uint64().toString();
+          message.txId = longToNumber(reader.uint64());
           continue;
         }
       }
@@ -830,10 +823,10 @@ export const Deposit: MessageFns<Deposit> = {
       asset: isSet(object.asset) ? assetIdFromJSON(object.asset) : 0,
       amount: isSet(object.amount) ? globalThis.String(object.amount) : "",
       txId: isSet(object.txId)
-        ? globalThis.String(object.txId)
+        ? globalThis.Number(object.txId)
         : isSet(object.tx_id)
-        ? globalThis.String(object.tx_id)
-        : "0",
+        ? globalThis.Number(object.tx_id)
+        : 0,
     };
   },
 
@@ -845,8 +838,8 @@ export const Deposit: MessageFns<Deposit> = {
     if (message.amount !== "") {
       obj.amount = message.amount;
     }
-    if (message.txId !== "0") {
-      obj.txId = message.txId;
+    if (message.txId !== 0) {
+      obj.txId = Math.round(message.txId);
     }
     return obj;
   },
@@ -858,20 +851,20 @@ export const Deposit: MessageFns<Deposit> = {
     const message = createBaseDeposit();
     message.asset = object.asset ?? 0;
     message.amount = object.amount ?? "";
-    message.txId = object.txId ?? "0";
+    message.txId = object.txId ?? 0;
     return message;
   },
 };
 
 function createBaseTrade(): Trade {
   return {
-    makerId: "0",
-    takerId: "0",
+    makerId: 0,
+    takerId: 0,
     price: "",
     quantity: "",
     takerSide: 0,
     makerSide: 0,
-    timestamp: "0",
+    timestamp: 0,
     market: 0,
     base: 0,
     quote: 0,
@@ -880,10 +873,10 @@ function createBaseTrade(): Trade {
 
 export const Trade: MessageFns<Trade> = {
   encode(message: Trade, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.makerId !== "0") {
+    if (message.makerId !== 0) {
       writer.uint32(8).uint64(message.makerId);
     }
-    if (message.takerId !== "0") {
+    if (message.takerId !== 0) {
       writer.uint32(16).uint64(message.takerId);
     }
     if (message.price !== "") {
@@ -898,7 +891,7 @@ export const Trade: MessageFns<Trade> = {
     if (message.makerSide !== 0) {
       writer.uint32(48).int32(message.makerSide);
     }
-    if (message.timestamp !== "0") {
+    if (message.timestamp !== 0) {
       writer.uint32(56).uint64(message.timestamp);
     }
     if (message.market !== 0) {
@@ -925,7 +918,7 @@ export const Trade: MessageFns<Trade> = {
             break;
           }
 
-          message.makerId = reader.uint64().toString();
+          message.makerId = longToNumber(reader.uint64());
           continue;
         }
         case 2: {
@@ -933,7 +926,7 @@ export const Trade: MessageFns<Trade> = {
             break;
           }
 
-          message.takerId = reader.uint64().toString();
+          message.takerId = longToNumber(reader.uint64());
           continue;
         }
         case 3: {
@@ -973,7 +966,7 @@ export const Trade: MessageFns<Trade> = {
             break;
           }
 
-          message.timestamp = reader.uint64().toString();
+          message.timestamp = longToNumber(reader.uint64());
           continue;
         }
         case 8: {
@@ -1012,15 +1005,15 @@ export const Trade: MessageFns<Trade> = {
   fromJSON(object: any): Trade {
     return {
       makerId: isSet(object.makerId)
-        ? globalThis.String(object.makerId)
+        ? globalThis.Number(object.makerId)
         : isSet(object.maker_id)
-        ? globalThis.String(object.maker_id)
-        : "0",
+        ? globalThis.Number(object.maker_id)
+        : 0,
       takerId: isSet(object.takerId)
-        ? globalThis.String(object.takerId)
+        ? globalThis.Number(object.takerId)
         : isSet(object.taker_id)
-        ? globalThis.String(object.taker_id)
-        : "0",
+        ? globalThis.Number(object.taker_id)
+        : 0,
       price: isSet(object.price) ? globalThis.String(object.price) : "",
       quantity: isSet(object.quantity) ? globalThis.String(object.quantity) : "",
       takerSide: isSet(object.takerSide)
@@ -1033,7 +1026,7 @@ export const Trade: MessageFns<Trade> = {
         : isSet(object.maker_side)
         ? sideFromJSON(object.maker_side)
         : 0,
-      timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : "0",
+      timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
       market: isSet(object.market) ? marketIdFromJSON(object.market) : 0,
       base: isSet(object.base) ? assetIdFromJSON(object.base) : 0,
       quote: isSet(object.quote) ? assetIdFromJSON(object.quote) : 0,
@@ -1042,11 +1035,11 @@ export const Trade: MessageFns<Trade> = {
 
   toJSON(message: Trade): unknown {
     const obj: any = {};
-    if (message.makerId !== "0") {
-      obj.makerId = message.makerId;
+    if (message.makerId !== 0) {
+      obj.makerId = Math.round(message.makerId);
     }
-    if (message.takerId !== "0") {
-      obj.takerId = message.takerId;
+    if (message.takerId !== 0) {
+      obj.takerId = Math.round(message.takerId);
     }
     if (message.price !== "") {
       obj.price = message.price;
@@ -1060,8 +1053,8 @@ export const Trade: MessageFns<Trade> = {
     if (message.makerSide !== 0) {
       obj.makerSide = sideToJSON(message.makerSide);
     }
-    if (message.timestamp !== "0") {
-      obj.timestamp = message.timestamp;
+    if (message.timestamp !== 0) {
+      obj.timestamp = Math.round(message.timestamp);
     }
     if (message.market !== 0) {
       obj.market = marketIdToJSON(message.market);
@@ -1080,13 +1073,13 @@ export const Trade: MessageFns<Trade> = {
   },
   fromPartial<I extends Exact<DeepPartial<Trade>, I>>(object: I): Trade {
     const message = createBaseTrade();
-    message.makerId = object.makerId ?? "0";
-    message.takerId = object.takerId ?? "0";
+    message.makerId = object.makerId ?? 0;
+    message.takerId = object.takerId ?? 0;
     message.price = object.price ?? "";
     message.quantity = object.quantity ?? "";
     message.takerSide = object.takerSide ?? 0;
     message.makerSide = object.makerSide ?? 0;
-    message.timestamp = object.timestamp ?? "0";
+    message.timestamp = object.timestamp ?? 0;
     message.market = object.market ?? 0;
     message.base = object.base ?? 0;
     message.quote = object.quote ?? 0;
@@ -1171,7 +1164,7 @@ export const Level: MessageFns<Level> = {
 };
 
 function createBaseDepthUpdate(): DepthUpdate {
-  return { market: 0, bids: [], asks: [], timestamp: "0" };
+  return { market: 0, bids: [], asks: [], timestamp: 0 };
 }
 
 export const DepthUpdate: MessageFns<DepthUpdate> = {
@@ -1185,7 +1178,7 @@ export const DepthUpdate: MessageFns<DepthUpdate> = {
     for (const v of message.asks) {
       Level.encode(v!, writer.uint32(26).fork()).join();
     }
-    if (message.timestamp !== "0") {
+    if (message.timestamp !== 0) {
       writer.uint32(32).uint64(message.timestamp);
     }
     return writer;
@@ -1227,7 +1220,7 @@ export const DepthUpdate: MessageFns<DepthUpdate> = {
             break;
           }
 
-          message.timestamp = reader.uint64().toString();
+          message.timestamp = longToNumber(reader.uint64());
           continue;
         }
       }
@@ -1244,7 +1237,7 @@ export const DepthUpdate: MessageFns<DepthUpdate> = {
       market: isSet(object.market) ? marketIdFromJSON(object.market) : 0,
       bids: globalThis.Array.isArray(object?.bids) ? object.bids.map((e: any) => Level.fromJSON(e)) : [],
       asks: globalThis.Array.isArray(object?.asks) ? object.asks.map((e: any) => Level.fromJSON(e)) : [],
-      timestamp: isSet(object.timestamp) ? globalThis.String(object.timestamp) : "0",
+      timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
     };
   },
 
@@ -1259,8 +1252,8 @@ export const DepthUpdate: MessageFns<DepthUpdate> = {
     if (message.asks?.length) {
       obj.asks = message.asks.map((e) => Level.toJSON(e));
     }
-    if (message.timestamp !== "0") {
-      obj.timestamp = message.timestamp;
+    if (message.timestamp !== 0) {
+      obj.timestamp = Math.round(message.timestamp);
     }
     return obj;
   },
@@ -1273,21 +1266,21 @@ export const DepthUpdate: MessageFns<DepthUpdate> = {
     message.market = object.market ?? 0;
     message.bids = object.bids?.map((e) => Level.fromPartial(e)) || [];
     message.asks = object.asks?.map((e) => Level.fromPartial(e)) || [];
-    message.timestamp = object.timestamp ?? "0";
+    message.timestamp = object.timestamp ?? 0;
     return message;
   },
 };
 
 function createBaseExecutionReport(): ExecutionReport {
-  return { clientId: "0", userId: "0", status: 0, trades: [], remainingQuantity: "", errorMessage: "" };
+  return { clientId: 0, userId: 0, status: 0, trades: [], remainingQuantity: "", errorMessage: "" };
 }
 
 export const ExecutionReport: MessageFns<ExecutionReport> = {
   encode(message: ExecutionReport, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.clientId !== "0") {
+    if (message.clientId !== 0) {
       writer.uint32(8).uint64(message.clientId);
     }
-    if (message.userId !== "0") {
+    if (message.userId !== 0) {
       writer.uint32(16).uint64(message.userId);
     }
     if (message.status !== 0) {
@@ -1317,7 +1310,7 @@ export const ExecutionReport: MessageFns<ExecutionReport> = {
             break;
           }
 
-          message.clientId = reader.uint64().toString();
+          message.clientId = longToNumber(reader.uint64());
           continue;
         }
         case 2: {
@@ -1325,7 +1318,7 @@ export const ExecutionReport: MessageFns<ExecutionReport> = {
             break;
           }
 
-          message.userId = reader.uint64().toString();
+          message.userId = longToNumber(reader.uint64());
           continue;
         }
         case 3: {
@@ -1372,15 +1365,15 @@ export const ExecutionReport: MessageFns<ExecutionReport> = {
   fromJSON(object: any): ExecutionReport {
     return {
       clientId: isSet(object.clientId)
-        ? globalThis.String(object.clientId)
+        ? globalThis.Number(object.clientId)
         : isSet(object.client_id)
-        ? globalThis.String(object.client_id)
-        : "0",
+        ? globalThis.Number(object.client_id)
+        : 0,
       userId: isSet(object.userId)
-        ? globalThis.String(object.userId)
+        ? globalThis.Number(object.userId)
         : isSet(object.user_id)
-        ? globalThis.String(object.user_id)
-        : "0",
+        ? globalThis.Number(object.user_id)
+        : 0,
       status: isSet(object.status) ? orderStatusFromJSON(object.status) : 0,
       trades: globalThis.Array.isArray(object?.trades) ? object.trades.map((e: any) => Trade.fromJSON(e)) : [],
       remainingQuantity: isSet(object.remainingQuantity)
@@ -1398,11 +1391,11 @@ export const ExecutionReport: MessageFns<ExecutionReport> = {
 
   toJSON(message: ExecutionReport): unknown {
     const obj: any = {};
-    if (message.clientId !== "0") {
-      obj.clientId = message.clientId;
+    if (message.clientId !== 0) {
+      obj.clientId = Math.round(message.clientId);
     }
-    if (message.userId !== "0") {
-      obj.userId = message.userId;
+    if (message.userId !== 0) {
+      obj.userId = Math.round(message.userId);
     }
     if (message.status !== 0) {
       obj.status = orderStatusToJSON(message.status);
@@ -1424,8 +1417,8 @@ export const ExecutionReport: MessageFns<ExecutionReport> = {
   },
   fromPartial<I extends Exact<DeepPartial<ExecutionReport>, I>>(object: I): ExecutionReport {
     const message = createBaseExecutionReport();
-    message.clientId = object.clientId ?? "0";
-    message.userId = object.userId ?? "0";
+    message.clientId = object.clientId ?? 0;
+    message.userId = object.userId ?? 0;
     message.status = object.status ?? 0;
     message.trades = object.trades?.map((e) => Trade.fromPartial(e)) || [];
     message.remainingQuantity = object.remainingQuantity ?? "";
@@ -1445,6 +1438,17 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function longToNumber(int64: { toString(): string }): number {
+  const num = globalThis.Number(int64.toString());
+  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
+    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
+  }
+  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
+    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
+  }
+  return num;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

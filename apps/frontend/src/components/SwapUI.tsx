@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePlaceOrder } from "../hooks/usePlaceOrder";
+import { MarketId, Side } from "../generated/exchange";
 
 export function SwapUI({ market }: {market: string}) {
 
@@ -8,8 +9,21 @@ export function SwapUI({ market }: {market: string}) {
     // const [amount, setAmount] = useState('');
     const [activeTab, setActiveTab] = useState('buy');
     const [type, setType] = useState('limit');
-
+    const [price, setPrice] = useState<number>(65000);
+    const [quantity, setQuantity] = useState<number>(100);
     const {placeOrder, loading} = usePlaceOrder();
+
+    const handleSubmit = async () => {
+        const orderData = {
+            market: MarketId.BTC_USDT,
+            price,
+            quantity,
+            side: Side.BUY
+        };
+        
+        // This will set loading to true until the Axum API responds
+        await placeOrder(orderData);
+    };
 
     return (
     <div>
@@ -38,7 +52,9 @@ export function SwapUI({ market }: {market: string}) {
                                 Price
                             </p>
                             <div className="flex flex-col relative">
-                                <input step="0.01" placeholder="0" className="h-12 rounded-lg border-2 border-solid border-baseBorderLight bg-[var(--background)] pr-12 text-right text-2xl leading-9 text-[$text] placeholder-baseTextMedEmphasis ring-0 transition focus:border-accentBlue focus:ring-0" type="text" defaultValue="134.38" />
+                                <input onChange={(e) => (
+                                    setPrice(Number(e.target.value))
+                                )} defaultValue={price} step="1" placeholder="0" className="h-12 rounded-lg border-2 border-solid border-baseBorderLight pr-12 text-right text-2xl leading-9 text-[$text] placeholder-baseTextMedEmphasis ring-0 transition focus:border-accentBlue focus:ring-0" type="number" />
                                 <div className="flex flex-row absolute right-1 top-1 p-2">
                                     <div className="relative">
                                         <img src="/usdc.png" className="w-6 h-6 rounded-full" />
@@ -52,7 +68,9 @@ export function SwapUI({ market }: {market: string}) {
                             Quantity
                         </p>
                         <div className="flex flex-col relative">
-                            <input onChange={() => {}} step="0.01" placeholder="0" className="h-12 rounded-lg border-2 border-solid border-baseBorderLight bg-[var(--background)] pr-12 text-right text-2xl leading-9 text-[$text] placeholder-baseTextMedEmphasis ring-0 transition focus:border-accentBlue focus:ring-0" type="text" value="123" />
+                            <input onChange={(e) => (
+                                setQuantity(Number(e.target.value))
+                            )} defaultValue={quantity} step="1" placeholder="0" className="h-12 rounded-lg border-2 border-solid border-baseBorderLight pr-12 text-right text-2xl leading-9 text-[$text] placeholder-baseTextMedEmphasis ring-0 transition focus:border-accentBlue focus:ring-0" type="number" />
                             <div className="flex flex-row absolute right-1 top-1 p-2">
                                 <div className="relative">
                                     <img src="/solana.png" className="w-6 h-6 rounded-full" />
@@ -77,7 +95,21 @@ export function SwapUI({ market }: {market: string}) {
                             </div>
                         </div>
                     </div>
-                    <button type="button" className="font-semibold  focus:ring-blue-200 focus:none focus:outline-none text-center h-12 rounded-xl text-base px-4 py-2 my-4 bg-green-400 hover:cursor-pointer hover:bg-green-500 active:scale-98" data-rac="">Buy</button>
+                    <div className="flex flex-col gap-4">
+                        {/* 2. Bind the disabled attribute to the loading state */}
+                        <button
+                            onClick={handleSubmit}
+                            disabled={loading}
+                            className={`px-4 py-2 rounded ${
+                                loading ? "bg-gray-500 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                            } text-white font-bold transition-colors`}
+                        >
+                            {/* 3. Change the text based on status */}
+                            {loading ? "Submitting Order..." : "Place Buy Order"}
+                        </button>
+                        
+                        {loading && <p className="text-sm text-gray-400">Communicating with Axum Gateway...</p>}
+                    </div>
                     <div className="flex flex-row mt-1">
                         <div className="flex flex-row gap-2">
                             <div className="flex items-center">
