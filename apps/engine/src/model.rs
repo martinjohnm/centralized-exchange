@@ -218,9 +218,9 @@ pub struct DepthResponse {
 #[derive(Debug, Clone, Copy, Serialize)]
 #[repr(i32)] 
 pub enum InternalOrderStatus {
-    Placed = 1,
-    PartiallyFilled = 2,
-    Filled = 3,
-    Rejected = 4,
-    Cancelled = 5,
+    Placed = 0,           // Match Proto
+    PartiallyFilled = 1,
+    Filled = 2,
+    Rejected = 3,
+    Cancelled = 4,
 }
