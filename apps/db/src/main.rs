@@ -1,4 +1,4 @@
-use std::{str::FromStr, time::{Duration, Instant}};
+use std::{i64, str::FromStr, time::{Duration, Instant}};
 
 use chrono::{TimeZone, Utc};
 use prost::Message;
@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if should_flush {
             let mut query_builder = QueryBuilder::new(
-                "INSERT INTO trade_history (time, symbol, price, volume, taker_side) "
+            "INSERT INTO trade_history (time, symbol, price, volume, taker_user_id, maker_user_id, taker_order_id, maker_order_id, taker_side) "
             );
 
             query_builder.push_values(trade_buffer.iter(), |mut b, trade| {
@@ -69,6 +69,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                  .push_bind(symbol)
                  .push_bind(price)
                  .push_bind(quantity)
+                 .push_bind(trade.taker_id as i64) // 5. taker_user_id (from your new proto fields)
+                 .push_bind(trade.maker_id as i64) // 6. maker_user_id
+                 .push_bind(trade.taker_order_id as i64) // 7. taker_order_id
+                 .push_bind(trade.maker_order_id as i64) // 8. maker_order_id
                  .push_bind(side_str);
             });
 

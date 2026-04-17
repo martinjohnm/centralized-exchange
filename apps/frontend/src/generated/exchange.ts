@@ -306,8 +306,14 @@ export interface Deposit {
 
 /** ====== OUT TYPES ========================================== */
 export interface Trade {
+  /** Account IDs (Who traded?) */
   makerId: number;
+  /** The User ID of the Taker */
   takerId: number;
+  /** Order IDs (Which specific orders matched?) */
+  makerOrderId: number;
+  /** New field for the Engine ID */
+  takerOrderId: number;
   /** "100.50" */
   price: string;
   /** "0.001" */
@@ -931,6 +937,8 @@ function createBaseTrade(): Trade {
   return {
     makerId: 0,
     takerId: 0,
+    makerOrderId: 0,
+    takerOrderId: 0,
     price: "",
     quantity: "",
     takerSide: 0,
@@ -949,6 +957,12 @@ export const Trade: MessageFns<Trade> = {
     }
     if (message.takerId !== 0) {
       writer.uint32(16).uint64(message.takerId);
+    }
+    if (message.makerOrderId !== 0) {
+      writer.uint32(88).uint64(message.makerOrderId);
+    }
+    if (message.takerOrderId !== 0) {
+      writer.uint32(96).uint64(message.takerOrderId);
     }
     if (message.price !== "") {
       writer.uint32(26).string(message.price);
@@ -998,6 +1012,22 @@ export const Trade: MessageFns<Trade> = {
           }
 
           message.takerId = longToNumber(reader.uint64());
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.makerOrderId = longToNumber(reader.uint64());
+          continue;
+        }
+        case 12: {
+          if (tag !== 96) {
+            break;
+          }
+
+          message.takerOrderId = longToNumber(reader.uint64());
           continue;
         }
         case 3: {
@@ -1085,6 +1115,16 @@ export const Trade: MessageFns<Trade> = {
         : isSet(object.taker_id)
         ? globalThis.Number(object.taker_id)
         : 0,
+      makerOrderId: isSet(object.makerOrderId)
+        ? globalThis.Number(object.makerOrderId)
+        : isSet(object.maker_order_id)
+        ? globalThis.Number(object.maker_order_id)
+        : 0,
+      takerOrderId: isSet(object.takerOrderId)
+        ? globalThis.Number(object.takerOrderId)
+        : isSet(object.taker_order_id)
+        ? globalThis.Number(object.taker_order_id)
+        : 0,
       price: isSet(object.price) ? globalThis.String(object.price) : "",
       quantity: isSet(object.quantity) ? globalThis.String(object.quantity) : "",
       takerSide: isSet(object.takerSide)
@@ -1111,6 +1151,12 @@ export const Trade: MessageFns<Trade> = {
     }
     if (message.takerId !== 0) {
       obj.takerId = Math.round(message.takerId);
+    }
+    if (message.makerOrderId !== 0) {
+      obj.makerOrderId = Math.round(message.makerOrderId);
+    }
+    if (message.takerOrderId !== 0) {
+      obj.takerOrderId = Math.round(message.takerOrderId);
     }
     if (message.price !== "") {
       obj.price = message.price;
@@ -1146,6 +1192,8 @@ export const Trade: MessageFns<Trade> = {
     const message = createBaseTrade();
     message.makerId = object.makerId ?? 0;
     message.takerId = object.takerId ?? 0;
+    message.makerOrderId = object.makerOrderId ?? 0;
+    message.takerOrderId = object.takerOrderId ?? 0;
     message.price = object.price ?? "";
     message.quantity = object.quantity ?? "";
     message.takerSide = object.takerSide ?? 0;

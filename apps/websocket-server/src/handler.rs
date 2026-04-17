@@ -44,6 +44,7 @@ pub async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
                                 // Only subscribe if we aren't already subscribed
                                 if user_updates_stream.is_none() {
                                     let channel = format!("user:{}", user_id);
+                                    println!("channel : {}", channel);
                                     if let Ok(mut pubsub) = state.redis_client.get_async_pubsub().await {
                                         if pubsub.subscribe(&channel).await.is_ok() {
                                             let stream = pubsub.into_on_message().map(|m| {

@@ -112,8 +112,14 @@ pub enum LedgerError {
 // ======== Out types (eg: Trades, Order_cancelled, Rejected) ==========================
 #[derive(Debug, Clone, Copy)]
 pub struct InternalTrade {
-    pub maker_id : u64, 
-    pub taker_id : u64,
+    // Internal Engine IDs (for sequence/order tracking)
+    pub maker_order_id: u64, 
+    pub taker_order_id: u64,
+    
+    // Account IDs (for Redis/Notifications/Accounting)
+    pub maker_user_id: u64,
+    pub taker_user_id: u64,
+
     pub price : Decimal,
     pub quantity : Decimal,
     pub taker_side : Side,
@@ -133,8 +139,11 @@ impl From<InternalTrade> for ProtoTrade {
             .as_micros() as u64; // Used .as_micros() for higher precision
         
         Self { 
-            maker_id: trade.maker_id, 
-            taker_id: trade.taker_id, 
+            maker_id: trade.maker_user_id, 
+            taker_id: trade.taker_user_id,
+
+            maker_order_id : trade.maker_order_id,
+            taker_order_id : trade.taker_order_id, 
 
             // convert decimal to string for the proto wire format
             price: trade.price.to_string(), 

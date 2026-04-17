@@ -30,10 +30,23 @@ CREATE TABLE IF NOT EXISTS trade_history (
     symbol TEXT NOT NULL, -- 'BTC_USDT' or 'ETH_USDT'
     price NUMERIC(38, 18) NOT NULL,
     volume NUMERIC(38, 18) NOT NULL,
+
+    -- Accountabality fields
+    taker_user_id BIGINT NOT NULL,
+    maker_user_id BIGINT NOT NULL,
+    taker_order_id BIGINT NOT NULL,
+    maker_order_id BIGINT NOT NULL,
+
     taker_side TEXT NOT NULL
 );
 
 SELECT create_hypertable('trade_history', 'time', if_not_exists => TRUE);
+
+-- ADD INDEXES INSTEAD OF FOREIGN KEYS
+-- This allows "My Trades" queries to be instant (log time)
+CREATE INDEX IF NOT EXISTS idx_trade_taker_user ON trade_history (taker_user_id, time DESC);
+CREATE INDEX IF NOT EXISTS idx_trade_maker_user ON trade_history (maker_user_id, time DESC);
+
 
 -- 4. Open Orders (For Crash Recovery)
 CREATE TABLE IF NOT EXISTS open_orders (

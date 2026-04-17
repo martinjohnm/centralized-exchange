@@ -52,8 +52,14 @@ message Deposit {
 
 // ====== OUT TYPES ==========================================
 message Trade {
-    uint64 maker_id = 1;
-    uint64 taker_id = 2;
+    // Account IDs (Who traded?)
+    uint64 maker_id = 1;      // The User ID of the Maker
+    uint64 taker_id = 2;      // The User ID of the Taker
+
+    // Order IDs (Which specific orders matched?)
+    uint64 maker_order_id = 11; // New field for the Engine ID
+    uint64 taker_order_id = 12; // New field for the Engine ID
+    
     string price = 3;     // "100.50"
     string quantity = 4;  // "0.001"
     Side taker_side = 5; // "buy" or "sell"

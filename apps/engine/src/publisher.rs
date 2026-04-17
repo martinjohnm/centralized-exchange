@@ -61,8 +61,12 @@ impl RedisPublisher {
                 // the trade events
                 Some(internal_trade) = self.trade_receiver.recv() => {
                     let proto_trade = Trade {
-                        maker_id : internal_trade.maker_id,
-                        taker_id : internal_trade.taker_id,
+                        maker_id : internal_trade.maker_user_id,
+                        taker_id : internal_trade.taker_user_id,
+                        
+                        maker_order_id : internal_trade.maker_order_id, 
+                        taker_order_id : internal_trade.taker_order_id,
+
                         price : internal_trade.price.to_string(),
                         quantity : internal_trade.quantity.to_string(),
                         taker_side : internal_trade.taker_side as i32,

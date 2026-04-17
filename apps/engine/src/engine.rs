@@ -53,6 +53,8 @@ impl Engine {
         let original_quantity = req.quantity.unwrap_or(rust_decimal_macros::dec!(0));
 
 
+        let mut taker_proto_trades: Vec<Trade> = Vec::new();
+
         // 1. Lock the users balance 
         // 2. Match fully or rest remaining
         // we clone the req becasue match_or_rest takes full ownership to potentially rest it 
@@ -67,16 +69,20 @@ impl Engine {
                 let total_filled : Decimal = trades.iter().map(|t| t.quantity).sum();
                 let remaining = original_quantity - total_filled;
 
-                let mut  proto_trade : Vec<Trade> = Vec::new();
+                
                 for internal_trade in trades {
                     // unlock the makers (who sat in the orderbook ) fund
                     if let Err(e) = self.trade_transmitter.try_send(internal_trade.clone()) {
                         eprintln!("Global telemetry lag:{}" , e);
                     }
 
-                    proto_trade.push(Trade { 
-                        maker_id : internal_trade.maker_id,
-                        taker_id : internal_trade.taker_id,
+                    let proto_t = Trade {
+                        maker_id : internal_trade.maker_user_id,
+                        taker_id : internal_trade.taker_user_id,
+
+                        maker_order_id : internal_trade.maker_order_id, 
+                        taker_order_id : internal_trade.taker_order_id,
+
                         price : internal_trade.price.to_string(),
                         quantity : internal_trade.quantity.to_string(),
                         taker_side : internal_trade.taker_side as i32,
@@ -85,16 +91,47 @@ impl Engine {
                         market : internal_trade.market as i32,
                         base : internal_trade.base as i32,
                         quote : internal_trade.quote as i32
-                     });
+                    };
+
+                    taker_proto_trades.push(proto_t.clone());
+
+                    // proto_trade.push(Trade { 
+                    //     maker_id : internal_trade.maker_id,
+                    //     taker_id : internal_trade.taker_id,
+                    //     price : internal_trade.price.to_string(),
+                    //     quantity : internal_trade.quantity.to_string(),
+                    //     taker_side : internal_trade.taker_side as i32,
+                    //     maker_side : internal_trade.maker_side as i32,
+                    //     timestamp : internal_trade.timestamp,
+                    //     market : internal_trade.market as i32,
+                    //     base : internal_trade.base as i32,
+                    //     quote : internal_trade.quote as i32
+                    //  });
+
+                    // 3. create a unique rport for the maker
+                    // maker needs to know their order was hit
+                    let maker_report = ExecutionReport {
+                        client_id: req.client_id.unwrap_or(0),
+                        user_id: internal_trade.maker_user_id,
+                        status: 0, // Direct cast to i32 for Protobuf
+                        trades : vec![proto_t],
+                        remaining_quantity: remaining.to_string(),
+                        error_message: String::new(),
+                    };
+
+                    match self.report_transmitter.try_send(maker_report) {
+                        Ok(_) => {}
+                        Err(e) => {eprintln!("error senting maker report : {}",e )}
+                    }
                 }
 
                 // 4 ---- The reporing to clients logic
-                let report = self.create_report(&req, proto_trade, remaining);
-                if let Err(e) = self.report_transmitter.try_send(report) {
-                        eprintln!("Global telemetry lag:{}" , e);
-                    }
-                // send to the redis reponder (Targeted pub sub)
-                // This resolves the async fn in the trade placer
+                
+                let taker_report = self.create_report(&req, taker_proto_trades, remaining);
+                match self.report_transmitter.try_send(taker_report) {
+                    Ok(_) => {}
+                    Err(e) => {eprintln!("error senting taker report : {}",e )}
+                }
 
             },
             Err(e) => {

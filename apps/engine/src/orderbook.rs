@@ -120,8 +120,10 @@ impl Orderbook {
                                     .expect("Time went backwards") // This only happens if the system clock is reset
                                     .as_micros() as u64;           // Used .as_micros() for more precision
                                 trades.push(InternalTrade { 
-                                    maker_id: maker_order.engine_id, 
-                                    taker_id: taker_order.engine_id, 
+                                    maker_order_id: maker_order.engine_id, 
+                                    taker_order_id: taker_order.engine_id, 
+                                    maker_user_id : maker_order.user_id,
+                                    taker_user_id : taker_order.user_id,
                                     price, 
                                     quantity: match_quantity, 
                                     taker_side: taker_order.side, 
