@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePlaceOrder } from "../hooks/usePlaceOrder";
-import { ExecutionReport, MarketId, Side, StreamType } from "../generated/exchange";
+import { MarketId, Side, StreamType } from "../generated/exchange";
 import { SignalingManager } from "../utils/SignalingManager";
 import { MarketNames } from "../types/marketTypes";
 
@@ -14,7 +14,7 @@ export function SwapUI({ market }: {market: string}) {
     const [price, setPrice] = useState<number>(65000);
     const [quantity, setQuantity] = useState<number>(100);
     const {placeOrder, loading} = usePlaceOrder();
-    const userId= 123;
+    const userId= 12300;
 
     const handleSubmit = async () => {
         const orderData = {
@@ -33,12 +33,12 @@ export function SwapUI({ market }: {market: string}) {
         SignalingManager.getInstance().sendMessage({
             "method": "userupdates",
             "params": {
-                "user_id": "123"
+                "user_id": userId.toString()
             }
         })
 
-        SignalingManager.getInstance().registerCallback(StreamType.USER_UPDATES, (data: ExecutionReport) => {
-            console.log(data);
+        SignalingManager.getInstance().registerCallback(StreamType.USER_UPDATES, () => {
+            // console.log(data);
             
         }, `${MarketNames[Number(market)]}:userupdates`)
 

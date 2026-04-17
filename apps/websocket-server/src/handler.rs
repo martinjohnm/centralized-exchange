@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use tokio_stream::{StreamExt, StreamMap, wrappers::BroadcastStream};
-use crate::{ model::WsRequest, state::AppState};
+use crate::{ model::{WsRequest, exchange_proto::{ExecutionReport, StreamType, WsOutMessage, ws_out_message::Data}}, state::AppState};
 use axum::{extract::{ws::{Message as WsMessage, WebSocket}}};
 
 use futures::stream::{Stream, BoxStream}; // Ensure these are imported
-
+use prost::Message;
 // 1. Define the type alias to make it readable
 type RedisStream = BoxStream<'static, Vec<u8>>;
 
@@ -13,9 +13,9 @@ pub async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
 
     let mut subscriptions = StreamMap::new();
     let mut heartbeat = tokio::time::interval(tokio::time::Duration::from_secs(10));
-
-    // declare the redis pub sub
-    let mut redis_pubsub: Option<RedisStream> = None;
+    
+    // Use a specific stream for User Updates so it doesn't get dropped
+    let mut user_updates_stream: Option<RedisStream> = None;
     loop {
         tokio::select! {
             // Leg 1. Receive json COMMANDS (SUBSCRIBE || UNSUBSCRIBE) from frontend
@@ -41,21 +41,17 @@ pub async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
                                 subscriptions.remove(&room_id);
                             }
                             WsRequest::UserUpdates { user_id } => {
-                                let channel = format!("user:{}", user_id);
-                                
-                                // FIX: We need to handle the lifetime of pubsub
-                                if let Ok(mut pubsub) = state.redis_client.get_async_pubsub().await {
-                                    // ⚠️ CRITICAL: You must call subscribe!
-                                    if let Ok(_) = pubsub.subscribe(&channel).await {
-                                        println!("✅ Subscribed to Redis: {}", channel);
-                                        
-                                        // into_on_message() consumes 'pubsub', which is 
-                                        // good because it keeps the connection alive inside the stream.
-                                        let stream = pubsub.into_on_message().map(|m| {
-                                            m.get_payload::<Vec<u8>>().unwrap_or_default()
-                                        });
-                                        
-                                        redis_pubsub = Some(Box::pin(stream));
+                                // Only subscribe if we aren't already subscribed
+                                if user_updates_stream.is_none() {
+                                    let channel = format!("user:{}", user_id);
+                                    if let Ok(mut pubsub) = state.redis_client.get_async_pubsub().await {
+                                        if pubsub.subscribe(&channel).await.is_ok() {
+                                            let stream = pubsub.into_on_message().map(|m| {
+                                                m.get_payload::<Vec<u8>>().unwrap_or_default()
+                                            });
+                                            user_updates_stream = Some(Box::pin(stream));
+                                            println!("✅ Persistent Redis Sub: {}", channel);
+                                        }
                                     }
                                 }
                             }
@@ -77,17 +73,23 @@ pub async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
                     }
                 }
             }
-            // Leg 3: User Updates (Private)
-            res = async {
-                match redis_pubsub.as_mut() {
-                    Some(p) => p.next().await,
-                    None => std::future::pending().await,
+            // Leg 3: User Updates (Private) - FIXED BRANCH
+            // Using a match guard to ensure we only poll if the stream exists
+            Some(raw_bytes) = async {
+                match user_updates_stream.as_mut() {
+                    Some(s) => s.next().await,
+                    None => None,
                 }
-            } => {
-                if let Some(bytes) = res {
-                    // Send the private protobuf data to the frontend
-                    if socket.send(WsMessage::Binary(bytes.into())).await.is_err() {
-                        break;
+            }, if user_updates_stream.is_some() => {
+                if let Ok(report) = ExecutionReport::decode(&raw_bytes[..]) {
+                    let out_msg = WsOutMessage {
+                        stream: StreamType::UserUpdates as i32,
+                        data: Some(Data::ExecutionReport(report)),
+                    };
+                    
+                    let mut buf = Vec::new();
+                    if out_msg.encode(&mut buf).is_ok() {
+                        if socket.send(WsMessage::Binary(buf.into())).await.is_err() { break; }
                     }
                 }
             }
