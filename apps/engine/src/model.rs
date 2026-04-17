@@ -26,6 +26,7 @@ pub struct Order {
     pub user_id: u64,
     pub price: Decimal,
     pub quantity: Decimal,
+    pub initial_quantity : Decimal,
     pub side: Side,
     pub timestamp: u64,
 }
@@ -122,6 +123,7 @@ pub struct InternalTrade {
 
     pub price : Decimal,
     pub quantity : Decimal,
+    pub maker_remaining : Decimal, // only for senting the maker remaining quantity to the client
     pub taker_side : Side,
     pub maker_side : Side,
     pub timestamp : u64,

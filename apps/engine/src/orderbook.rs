@@ -126,6 +126,7 @@ impl Orderbook {
                                     taker_user_id : taker_order.user_id,
                                     price, 
                                     quantity: match_quantity, 
+                                    maker_remaining : maker_order.quantity,
                                     taker_side: taker_order.side, 
                                     maker_side: maker_order.side,
                                     timestamp,
@@ -315,6 +316,7 @@ impl Orderbook {
             user_id: req.user_id,
             price,
             quantity,
+            initial_quantity : quantity, // create the initial_quantity as quantity
             side: req.side,
             timestamp: req.timestamp,
         })
@@ -530,6 +532,7 @@ mod tests {
             user_id,
             price: dec!(45000),
             quantity: dec!(0.5),
+            initial_quantity : dec!(0.5),
             side: Side::Buy,
             timestamp: 999,
         };
@@ -573,6 +576,7 @@ mod tests {
             user_id: u_id,
             price: dec!(100),
             quantity: dec!(1),
+            initial_quantity : dec!(0.5),
             side: Side::Buy,
             timestamp: 0,
         };
@@ -610,6 +614,7 @@ mod tests {
             engine_id: 1,
             price,
             quantity: dec!(1.0),
+            initial_quantity : dec!(0.5),
             side,
             user_id: 42,
             client_id: 101,
@@ -705,6 +710,7 @@ mod tests {
             client_id,
             price: dec!(50000),
             quantity: dec!(1.0),
+            initial_quantity : dec!(0.5),
             side: Side::Buy,
             timestamp: 123456789,
         };
@@ -774,6 +780,7 @@ mod tests {
                 client_id: 100 + i as u64,
                 price: common_price,
                 quantity: dec!(0.5),
+                initial_quantity : dec!(0.5),
                 side: Side::Buy,
                 timestamp: 0,
             };

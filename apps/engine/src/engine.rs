@@ -67,7 +67,7 @@ impl Engine {
 
                 // calculate how much filled to find the remainder
                 let total_filled : Decimal = trades.iter().map(|t| t.quantity).sum();
-                let remaining = original_quantity - total_filled;
+                let taker_remaining = original_quantity - total_filled;
 
                 
                 for internal_trade in trades {
@@ -113,9 +113,13 @@ impl Engine {
                     let maker_report = ExecutionReport {
                         client_id: req.client_id.unwrap_or(0),
                         user_id: internal_trade.maker_user_id,
-                        status: 0, // Direct cast to i32 for Protobuf
+                        status: (if internal_trade.maker_remaining.is_zero() {
+                            InternalOrderStatus::Filled 
+                        } else {
+                            InternalOrderStatus::PartiallyFilled
+                        }) as i32, // Direct cast to i32 for Protobuf
                         trades : vec![proto_t],
-                        remaining_quantity: remaining.to_string(),
+                        remaining_quantity: internal_trade.maker_remaining.to_string(), // this is only used here
                         error_message: String::new(),
                     };
 
@@ -127,7 +131,7 @@ impl Engine {
 
                 // 4 ---- The reporing to clients logic
                 
-                let taker_report = self.create_report(&req, taker_proto_trades, remaining);
+                let taker_report = self.create_report(&req, taker_proto_trades, taker_remaining);
                 match self.report_transmitter.try_send(taker_report) {
                     Ok(_) => {}
                     Err(e) => {eprintln!("error senting taker report : {}",e )}
