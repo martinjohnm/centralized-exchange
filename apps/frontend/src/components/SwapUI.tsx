@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { usePlaceOrder } from "../hooks/usePlaceOrder";
-import { MarketId, Side, StreamType } from "../generated/exchange";
+import { ExecutionReport, MarketId, OrderStatus, Side, StreamType } from "../generated/exchange";
 import { SignalingManager } from "../utils/SignalingManager";
 import { MarketNames } from "../types/marketTypes";
 
 export function SwapUI({ market }: {market: string}) {
 
-    console.log(market);
     
     // const [amount, setAmount] = useState('');
     const [activeTab, setActiveTab] = useState('buy');
@@ -37,8 +36,35 @@ export function SwapUI({ market }: {market: string}) {
             }
         })
 
-        SignalingManager.getInstance().registerCallback(StreamType.USER_UPDATES, () => {
-            // console.log(data);
+        SignalingManager.getInstance().registerCallback(StreamType.USER_UPDATES, (data: ExecutionReport) => {
+            switch (data.status) {
+                case OrderStatus.PLACED:
+                    console.log("placed");
+                    
+                    break;
+                case OrderStatus.FILLED:
+                    console.log("filled");
+                    
+                    break;
+                case OrderStatus.PARTIALLY_FILLED:
+                    console.log("partial fills");
+                    
+                    break;
+                case OrderStatus.CANCELLED:
+                    console.log("cancelled");
+                    
+                    break;
+                case OrderStatus.REJECTED:
+                    console.log("rejected");
+                    
+                    break;
+                case OrderStatus.UNRECOGNIZED:
+                    console.log("not recognized")
+                    break;
+                default:
+                    console.warn("unkown type");
+                    
+            }
             
         }, `${MarketNames[Number(market)]}:userupdates`)
 

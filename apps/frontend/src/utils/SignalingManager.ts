@@ -68,8 +68,6 @@ export class SignalingManager {
                         break;
                     case StreamType.USER_UPDATES:
                         this.callbacks.get(streamType)?.forEach(({callback} : {callback: any}) => {
-                            console.log(message);
-                            
                             callback(message.executionReport)
                         })
                         break;

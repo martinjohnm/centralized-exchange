@@ -3,6 +3,7 @@ use std::{os::linux::raw::stat, sync::Arc, time::Duration};
 use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use prost::Message;
 use redis::AsyncCommands;
+use serde_json::json;
 use tokio::time::timeout;
 use crate::model::{AppState, exchange_proto::{ExchangeRequest, ExecutionReport, exchange_request::Action}};
 use futures_util::StreamExt;
@@ -42,7 +43,14 @@ pub async fn create_order(
 
     // 4. Return 202 Accepted
     // This tells the user: "We got it, check your WebSocket for the results."
-    StatusCode::ACCEPTED.into_response()
+    (
+        StatusCode::ACCEPTED, 
+        Json(json!({
+            "status": "success",
+            "message": "Order placed",
+            "market": market_config.redis_key
+        }))
+    ).into_response()
 }
 
 pub async fn cancel_order() {
