@@ -10,7 +10,7 @@ export const Depth = ({market} : {market: string}) => {
 
     const [bids, setBids] = useState<Level[]>();
     const [asks, setAsks] = useState<Level[]>();
-    const price = 65000;
+    const [price, setPrice] = useState<string>("")
     const marketName = MarketNames[Number(market)];
     // for the depth update
     useEffect(() => {
@@ -26,7 +26,9 @@ export const Depth = ({market} : {market: string}) => {
         SignalingManager.getInstance().registerCallback(StreamType.DEPTH, (data: DepthUpdate) => {
             setAsks(data.asks);
             setBids(data.bids);
-            // setPrice(data.bids[0].price)
+            // set a mid price !!
+            const midPrice = String((Number(data.bids[0].price) + Number(data.asks[0].price)) / 2)
+            setPrice(midPrice)
             
         }, `${marketName}:depth`)
 
