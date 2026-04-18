@@ -13,6 +13,8 @@ export function SwapUI({ market }: {market: string}) {
     const [price, setPrice] = useState<number>(65000);
     const [quantity, setQuantity] = useState<number>(100);
     const {placeOrder, loading} = usePlaceOrder();
+    const [status, setStatus] = useState<string>("");
+    const [remainingQty, setRemainingQty] = useState<string>("");
     const userId= 12300;
 
     const handleSubmit = async () => {
@@ -37,29 +39,25 @@ export function SwapUI({ market }: {market: string}) {
         })
 
         SignalingManager.getInstance().registerCallback(StreamType.USER_UPDATES, (data: ExecutionReport) => {
+            setRemainingQty(data.remainingQuantity)
             switch (data.status) {
                 case OrderStatus.PLACED:
-                    console.log("placed");
-                    
+                    setStatus("placed")
                     break;
                 case OrderStatus.FILLED:
-                    console.log("filled");
-                    
+                    setStatus("filled")
                     break;
                 case OrderStatus.PARTIALLY_FILLED:
-                    console.log("partial fills");
-                    
+                    setStatus("partially filled")
                     break;
                 case OrderStatus.CANCELLED:
-                    console.log("cancelled");
-                    
+                    setStatus("cancelled")
                     break;
                 case OrderStatus.REJECTED:
-                    console.log("rejected");
-                    
+                    setStatus("rejected")
                     break;
                 case OrderStatus.UNRECOGNIZED:
-                    console.log("not recognized")
+                    setStatus("invalid ")
                     break;
                 default:
                     console.warn("unkown type");
@@ -126,6 +124,14 @@ export function SwapUI({ market }: {market: string}) {
                                 </div>
                             </div>
                         </div>
+                        <div>
+                            <div>
+                                {status}
+                            </div>
+                            <div>
+                                {remainingQty}
+                            </div>
+                        </div>
                         <div className="flex justify-end flex-row">
                             <p className="font-medium pr-2 text-xs text-baseTextMedEmphasis">≈ 0.00 USDC</p>
                         </div>
@@ -149,12 +155,11 @@ export function SwapUI({ market }: {market: string}) {
                         <button
                             onClick={handleSubmit}
                             disabled={loading}
-                            className={`px-4 py-2 rounded ${
-                                loading ? "bg-gray-500 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                            className={`px-4 py-2 rounded ${"bg-green-600"
                             } text-white font-bold transition-colors`}
                         >
                             {/* 3. Change the text based on status */}
-                            {loading ? "Submitting Order..." : "Place Buy Order"}
+                            {"Buy"}
                         </button>
                         
                         {loading && <p className="text-sm text-gray-400">Communicating with Axum Gateway...</p>}

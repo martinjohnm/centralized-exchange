@@ -2,11 +2,24 @@ import type { Level } from "../../types/depthTypes";
 
 export const AskTable = ({ asks }: { asks: Level[] }) => {
     
-    
-    const relevantAsks = asks.slice(0, 15);
+    const relevantAsks = asks.slice(0, 15).reverse();
+    const maxTotal = relevantAsks.reduce((acc, level) => acc + Number(level.quantity), 0);
+
+    const asksWithTotal: [string, string, number][] = relevantAsks.map((level, index) => {
+        // We calculate the sum of all quantities from index 0 up to the current index
+        const totalSoFar = relevantAsks
+            .slice(0, index + 1)
+            .reduce((sum, item) => sum + Number(item.quantity), 0);
+
+        return [level.price, level.quantity, totalSoFar];
+    });
+
+    // 3. Flip it back so high prices are at the top
+    asksWithTotal.reverse();
+
 
     return <div>
-        {relevantAsks.map((level) => <Ask maxTotal={Number(level.price)} key={level.price} price={level.price} quantity={level.quantity} total={Number(level.quantity)} />)}
+        {asksWithTotal.map(([price, quantity, total]) => <Ask maxTotal={maxTotal} key={price} price={price} quantity={quantity} total={total} />)}
     </div>
 }
 function Ask({price, quantity, total, maxTotal}: {price: string, quantity: string, total: number, maxTotal: number}) {

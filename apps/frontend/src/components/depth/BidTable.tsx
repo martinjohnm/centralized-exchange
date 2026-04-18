@@ -4,11 +4,20 @@ export const BidTable = ({ bids }: {bids: Level[]}) => {
     
 
     const relevantBids = bids.slice(0, 15);
-    
-    
+    const bidsWithTotal: [string, string, number][] = relevantBids.map((level, index) => {
+        // We calculate the sum of all quantities from index 0 up to the current index
+        const totalSoFar = relevantBids
+            .slice(0, index + 1)
+            .reduce((sum, item) => sum + Number(item.quantity), 0);
+
+        return [level.price, level.quantity, totalSoFar];
+    }
+        
+    );
+    const maxTotal = relevantBids.reduce((acc, level) => acc + Number(level.quantity), 0);
 
     return <div>
-        {relevantBids?.map((level) => <Bid maxTotal={Number(level.price)} total={Number(level.quantity)} key={level.price} price={level.price} quantity={level.quantity} />)}
+        {bidsWithTotal?.map(([price, quantity, total]) => <Bid maxTotal={maxTotal} total={total} key={price} price={price} quantity={quantity} />)}
     </div>
 }
 
