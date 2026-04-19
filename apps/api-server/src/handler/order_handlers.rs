@@ -47,12 +47,50 @@ pub async fn create_order(
         StatusCode::ACCEPTED, 
         Json(json!({
             "status": "success",
-            "message": "Order placed",
-            "market": market_config.redis_key
+            "message": "Order placed"
         }))
     ).into_response()
 }
 
-pub async fn cancel_order() {
+pub async fn cancel_order(
+    State(state): State<AppState>,
+    Json(exchange_req) : Json<ExchangeRequest>
+) -> impl IntoResponse {
+    let cancel_payload = match exchange_req.action {
+        Some(Action::Cancel(c)) => c, 
+        Some(_) => return (StatusCode::BAD_REQUEST, "Only cancel order is allowed here").into_response(),
+        None => return (StatusCode::BAD_REQUEST, "No action provided").into_response()
+    };
 
+    let market = cancel_payload.market();
+    let market_config = match state.markets.get(&market) {
+        Some(config) => config,
+        None => return (StatusCode::BAD_REQUEST, "Market not supported").into_response(),
+    };
+
+    // encode the protobuf
+    let mut buf = Vec::new();
+
+    if let Err(_) = exchange_req.encode(&mut buf) {
+        return (StatusCode::INTERNAL_SERVER_ERROR, "Encoding failed").into_response();
+    };
+
+    // push to redis queue for processing
+
+    let mut conn = match state.redis.get().await {
+        Ok(c) => c,
+        Err(_) => return (StatusCode::SERVICE_UNAVAILABLE, "Redis busy").into_response()
+    };
+
+    let _: () = conn.lpush(&market_config.redis_key, buf).await.unwrap();
+
+    // Return 202 accepted
+
+    (
+        StatusCode::ACCEPTED, 
+        Json(json!({
+            "status": "success",
+            "message": "Order cancelled"
+        }))
+    ).into_response()
 }
