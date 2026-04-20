@@ -120,7 +120,7 @@ impl Engine {
                         market : internal_trade.market as i32,
                         price : internal_trade.price.to_string(),
                         quantity : internal_trade.maker_initial_quantity.to_string(), // set the quantity as alwaays the initial quantity 
-                        filled_quantity : internal_trade.maker_remaining.to_string(), // this is the updating quantity
+                        filled_quantity : (internal_trade.maker_initial_quantity - internal_trade.maker_remaining).to_string(), // this is the updating quantity
                         side : internal_trade.maker_side as i32,
                         status : (if internal_trade.maker_remaining.is_zero() {
                             InternalOrderStatus::Filled 
