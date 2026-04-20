@@ -112,7 +112,18 @@ message ExecutionReport {
     string remaining_quantity = 5;
     string error_message = 6; // Only populated if status == REJECTED
 }
-
+message OrderUpdate {
+    uint64 engine_id = 1;          // Primary Key
+    uint64 user_id = 2;            
+    MarketId market = 3;           // Needed for 'symbol' column
+    string price = 4;              
+    string quantity = 5;           // Original total quantity
+    string filled_quantity = 6;    // How much has been filled so far
+    Side side = 7;                 
+    OrderStatus status = 8;        
+    uint64 timestamp = 9;
+    
+}
 // Websocket updates types 
 message Candle {
     string open = 2;

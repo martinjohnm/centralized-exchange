@@ -1,10 +1,10 @@
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use crate::model::exchange_proto::{AssetId, ExchangeRequest, MarketId, Trade as ProtoTrade, exchange_request::Action};
+use crate::model::exchange_proto::{AssetId, ExchangeRequest, MarketId, OrderStatus, Trade as ProtoTrade, exchange_request::Action};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 // 1. Order Request struct
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct OrderRequest {
     pub user_id : u64,
     pub market : MarketId,
@@ -124,12 +124,20 @@ pub struct InternalTrade {
     pub price : Decimal,
     pub quantity : Decimal,
     pub maker_remaining : Decimal, // only for senting the maker remaining quantity to the client
+    pub maker_initial_quantity : Decimal, // only for storing the orders to db
     pub taker_side : Side,
     pub maker_side : Side,
     pub timestamp : u64,
     pub base : AssetId,
     pub quote : AssetId,
     pub market : MarketId
+}
+
+pub struct ExecutionResult {
+    pub engine_id: u64,           // The ID generated inside the book
+    pub taker_status: OrderStatus, // Filled, Partial, or Placed
+    pub trades: Vec<InternalTrade>,
+    pub remaining_quantity: Decimal,
 }
 
 impl From<InternalTrade> for ProtoTrade {

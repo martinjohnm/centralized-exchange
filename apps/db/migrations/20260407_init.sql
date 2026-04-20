@@ -51,7 +51,7 @@ CREATE INDEX IF NOT EXISTS idx_trade_maker_user ON trade_history (maker_user_id,
 -- 4. Open Orders (For Crash Recovery)
 CREATE TABLE IF NOT EXISTS open_orders (
     order_id BIGINT PRIMARY KEY,
-    user_id BIGINT REFERENCES users(id),
+    user_id BIGINT NOT NULL,
     symbol TEXT NOT NULL,
     side TEXT NOT NULL,
     price NUMERIC(38, 18) NOT NULL,
@@ -59,7 +59,8 @@ CREATE TABLE IF NOT EXISTS open_orders (
     filled NUMERIC(38, 18) DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE open_orders ADD CONSTRAINT filled_not_exceed_qty CHECK (filled <= quantity);
+CREATE INDEX idx_open_orders_user ON open_orders (user_id);
+-- ALTER TABLE open_orders ADD CONSTRAINT filled_not_exceed_qty CHECK (filled <= quantity);
 
 -- 5. Klines (Continuous Aggregates)
 -- This is better than Materialized Views because it updates AUTOMATICALLY

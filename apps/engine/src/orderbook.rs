@@ -4,7 +4,7 @@ use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use tokio::sync::mpsc::{Sender, Receiver};
 
-use crate::{model::{ClientOrderId, DepthResponse, EngineOrderId, InternalTrade, Level, MatchingError, Order, OrderError, OrderRequest, Side, UserId}, utils::MarketConfig};
+use crate::{model::{ClientOrderId, DepthResponse, EngineOrderId, ExecutionResult, InternalTrade, Level, MatchingError, Order, OrderError, OrderRequest, Side, UserId, exchange_proto::OrderStatus}, utils::MarketConfig};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 
@@ -54,7 +54,7 @@ impl Orderbook {
     }
 
     // ========== THE HOT PATH ===========
-    pub fn match_or_rest(&mut self, req: OrderRequest) -> Result<Vec<InternalTrade>, MatchingError> {
+    pub fn match_or_rest(&mut self, req: OrderRequest) -> Result<ExecutionResult, MatchingError> {
 
 
         // 1). ------------------------- VALIDATION AND PROMOTION ------------------------------
@@ -68,6 +68,9 @@ impl Orderbook {
         let base = self.config.base_asset;
         let quote = self.config.quote_asset;
         let market = self.config.market_id;
+
+        let placed_qty = req.quantity.unwrap_or_default(); // hold it for the return value
+
         // 2). ------------------------- MATCHING LOGIC ---------------------------------- 
         while taker_order.quantity > dec!(0) {
             /// 1. Look for the best price in the oppostie side
@@ -127,6 +130,7 @@ impl Orderbook {
                                     price, 
                                     quantity: match_quantity, 
                                     maker_remaining : maker_order.quantity,
+                                    maker_initial_quantity : maker_order.initial_quantity,
                                     taker_side: taker_order.side, 
                                     maker_side: maker_order.side,
                                     timestamp,
@@ -183,6 +187,19 @@ impl Orderbook {
             }
         }
 
+        // 1. Capture the metadata BEFORE moves
+        let engine_id = taker_order.engine_id;
+        let remaining_quantity = taker_order.quantity; // Current state after matching
+
+        // 2. Derive the status
+        let taker_status = if remaining_quantity.is_zero() {
+            OrderStatus::Filled
+        } else if remaining_quantity < placed_qty {
+            OrderStatus::PartiallyFilled
+        } else {
+            OrderStatus::Placed
+        };
+        
         // 3). -------------- THE FINAL STEP ---------------------------------------
         // if quantity remains its now a "Maker"
         if taker_order.quantity > dec!(0) {
@@ -190,8 +207,15 @@ impl Orderbook {
             self.add_to_indexes(&taker_order);
             self.rest_in_book(taker_order);
         }
-
-        Ok(trades)
+        let res = ExecutionResult {
+            engine_id,
+            taker_status,
+            trades,
+            remaining_quantity
+        };
+        
+        Ok(res)
+        
     }
 
     // ========= CANCELLATION LOGIC =============
@@ -905,8 +929,8 @@ mod tests {
         }).unwrap();
 
         // Assertions
-        assert_eq!(trades.len(), 1);
-        assert_eq!(trades[0].quantity, dec!(1.0));
+        assert_eq!(trades.trades.len(), 1);
+        assert_eq!(trades.trades[0].quantity, dec!(1.0));
         assert!(ob.asks.is_empty(), "Asks should be empty after a full fill");
         assert!(ob.orders_metadata.is_empty(), "Metadata should be deleted after full fill");
         assert!(ob.client_id_map.is_empty(), "Client_map should be deleted after full fill");
@@ -957,7 +981,7 @@ mod tests {
             timestamp : 123456789
         }).unwrap();
 
-        assert_eq!(trades[0].quantity, dec!(2.0));
+        assert_eq!(trades.trades[0].quantity, dec!(2.0));
 
         // Check the remaining maker quantity
         let level = ob.asks.get(&dec!(50000)).unwrap();
@@ -1024,9 +1048,9 @@ mod tests {
             timestamp : 123456789
         }).unwrap();
 
-        assert_eq!(trades.len(), 2);
-        assert_eq!(trades[0].price, dec!(100));
-        assert_eq!(trades[1].price, dec!(101));
+        assert_eq!(trades.trades.len(), 2);
+        assert_eq!(trades.trades[0].price, dec!(100));
+        assert_eq!(trades.trades[1].price, dec!(101));
         assert!(ob.asks.is_empty(), "Book should be cleared after sweep");
     }
 
@@ -1078,7 +1102,7 @@ mod tests {
             timestamp : 123456789
         }).unwrap();
 
-        assert_eq!(trades.len(), 0, "No trade should happen on self-trade");
+        assert_eq!(trades.trades.len(), 0, "No trade should happen on self-trade");
         assert!(ob.asks.is_empty(), "Maker should have been cancelled");
         assert!(ob.bids.contains_key(&dec!(50)), "Taker should have rested in the book as Bid");
     }

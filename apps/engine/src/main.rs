@@ -7,7 +7,7 @@ mod ledger;
 mod publisher;
 
 use tokio::sync::mpsc;
-use crate::{model::{DepthResponse, InternalTrade, exchange_proto::ExecutionReport}, publisher::RedisPublisher, utils::{MarketConfig, load_markets_from_proto}, worker::Worker};
+use crate::{model::{DepthResponse, InternalTrade, exchange_proto::{ExecutionReport, OrderUpdate}}, publisher::RedisPublisher, utils::{MarketConfig, load_markets_from_proto}, worker::Worker};
 use std::thread;
 use dotenvy::dotenv;
 use std::env;
@@ -28,12 +28,13 @@ async fn main() {
     let (trade_tx, trade_rx) = mpsc::channel::<InternalTrade>(10000);
     let (depth_tx, depth_rx) = mpsc::channel::<DepthResponse>(10000);
     let (report_tx, report_rx) = mpsc::channel::<ExecutionReport>(10000);
+    let (orders_tx, orders_rx) = mpsc::channel::<OrderUpdate>(10_000);
 
     // 2. Create a green thread for broadcastor (which holds the single receiver and listens and broadcasts 
     //    events from various markets in which each markets clones a copy of the transmitter to send events)
     let redis_url_to_redis_publisher = redis_url.to_string().clone();
     tokio::spawn(async move {
-        let publisher = RedisPublisher::new(trade_rx,depth_rx,report_rx, redis_url_to_redis_publisher);
+        let publisher = RedisPublisher::new(trade_rx,depth_rx,report_rx,orders_rx, redis_url_to_redis_publisher);
         publisher.run().await;
     });
 
@@ -46,13 +47,14 @@ async fn main() {
         let trade_tx_clone = trade_tx.clone();
         let depth_tx_clone = depth_tx.clone();
         let report_tx_clone = report_tx.clone();
+        let orders_tx_clone = orders_tx.clone();
 
         thread::spawn(move || {
             println!("[] Initializing market thread...");
 
             // Engine and Worker are created inside the thread to ensure
             // they are owned by the thread's stack (Shared-Nothing).
-            let mut worker = Worker::new(market_id, config, &redis_url, trade_tx_clone, depth_tx_clone, report_tx_clone);
+            let mut worker = Worker::new(market_id, config, &redis_url, trade_tx_clone, depth_tx_clone, report_tx_clone, orders_tx_clone);
             
             worker.run_worker();
         });

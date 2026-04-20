@@ -3,7 +3,7 @@ use std::{num::NonZeroUsize};
 use prost::Message;
 use redis::{Commands, Connection};
 use tokio::sync::mpsc::{Sender, Receiver};
-use crate::{engine::Engine, model::{DepthResponse, InternalTrade, OrderRequest, exchange_proto::{ExchangeRequest, ExecutionReport, MarketId}}, utils::MarketConfig};
+use crate::{engine::Engine, model::{DepthResponse, InternalTrade, OrderRequest, exchange_proto::{ExchangeRequest, ExecutionReport, MarketId, OrderUpdate}}, utils::MarketConfig};
 
 
 
@@ -17,14 +17,14 @@ pub struct Worker {
 }
 
 impl Worker {
-    pub fn new(market_id : MarketId, config : MarketConfig, redis_url : &str,  trade_tx_clone : Sender<InternalTrade>, depth_tx_clone: Sender<DepthResponse>, report_tx_clone: Sender<ExecutionReport>) -> Self {
+    pub fn new(market_id : MarketId, config : MarketConfig, redis_url : &str,  trade_tx_clone : Sender<InternalTrade>, depth_tx_clone: Sender<DepthResponse>, report_tx_clone: Sender<ExecutionReport>, orders_tx_clone: Sender<OrderUpdate>) -> Self {
 
         let queue_key = config.redis_key;
         let symbol = market_id;
         let redis_client = redis::Client::open(redis_url).unwrap();
 
         let trade_tx_clone = trade_tx_clone.clone();
-        let engine = Engine::new(config, trade_tx_clone, report_tx_clone);
+        let engine = Engine::new(config, trade_tx_clone, report_tx_clone, orders_tx_clone);
         let connection = redis_client.get_connection().expect("failed to connect to redis");
 
         Self { 

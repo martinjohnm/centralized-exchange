@@ -4,7 +4,7 @@ use prost::Message;
 use redis::AsyncCommands;
 use tokio::{net::unix::pipe::Receiver, sync::mpsc};
 
-use crate::model::{DepthResponse, InternalTrade, exchange_proto::{DepthUpdate, ExecutionReport, Level, MarketId, Trade}};
+use crate::model::{DepthResponse, InternalTrade, exchange_proto::{DepthUpdate, ExecutionReport, Level, MarketId, OrderUpdate, Trade}};
 
 
 
@@ -13,14 +13,16 @@ pub struct RedisPublisher {
     pub trade_receiver : mpsc::Receiver<InternalTrade>,
     pub depth_receiver : mpsc::Receiver<DepthResponse>,
     pub report_receiver: mpsc::Receiver<ExecutionReport>,
+    pub orders_receiver: mpsc::Receiver<OrderUpdate>,
     pub redis_url : String,
     pub trade_channels : HashMap<MarketId , &'static str>,
     pub depth_channels : HashMap<MarketId, &'static str>,
-    pub db_queue : &'static str
+    pub db_queue : &'static str,
+    pub db_order_queue : &'static str
 }
 
 impl RedisPublisher {
-    pub fn new(trade_receiver :mpsc::Receiver<InternalTrade>, depth_receiver : mpsc::Receiver<DepthResponse>,report_receiver: mpsc::Receiver<ExecutionReport>, redis_url: String) -> Self {
+    pub fn new(trade_receiver :mpsc::Receiver<InternalTrade>, depth_receiver : mpsc::Receiver<DepthResponse>,report_receiver: mpsc::Receiver<ExecutionReport>,orders_receiver: mpsc::Receiver<OrderUpdate>, redis_url: String) -> Self {
 
         let mut trade_channels = HashMap::new();
 
@@ -36,10 +38,12 @@ impl RedisPublisher {
             trade_receiver,
             depth_receiver,
             report_receiver,
+            orders_receiver,
             redis_url,
             trade_channels,
             depth_channels,
-            db_queue : "db_processor"
+            db_queue : "db_processor",
+            db_order_queue : "db_order_processor"
         }
     }
 
@@ -135,6 +139,18 @@ impl RedisPublisher {
                     pending = true;
                 }
 
+                // 4th arm of the select block
+                Some(order) = self.orders_receiver.recv() => {
+                    let mut payload = Vec::new();
+                    if let Err(e) = order.encode(&mut payload) {
+                        eprintln!(
+                            "Failed to encode orders report: {}", e
+                        )
+                    }
+
+                    pipe.lpush(self.db_order_queue, payload);
+                    pending = true;
+                }
             }
 
             if pending {
