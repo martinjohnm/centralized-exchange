@@ -4,7 +4,7 @@ import { getKlines } from "../utils/httpClient";
 import { SignalingManager } from "../utils/SignalingManager";
 import type { CandlestickData } from "lightweight-charts";
 import { ChartManager } from "../utils/ChartManager";
-import { Candle, MarketId, StreamType } from "../generated/exchange";
+import { Candle, StreamType } from "../generated/exchange";
 
 
 const INITIAL_CANDLE_COUNT = 200;
@@ -36,7 +36,7 @@ export const TradeView = ({market} : {market: string}) => {
             let klines: CandlestickData[] = [];
             
             try {
-                klines = await getKlines(MarketId.BTC_USDT, candleTime, INITIAL_CANDLE_COUNT);
+                klines = await getKlines(Number(market), candleTime, INITIAL_CANDLE_COUNT);
                 
             } catch (e) {
                 console.log(e);
@@ -121,7 +121,7 @@ export const TradeView = ({market} : {market: string}) => {
             }
         };
         
-    }, [candleTime, marketName]); // Empty dependency array ensures this runs on mount/unmount
+    }, [candleTime, marketName, market]); // Empty dependency array ensures this runs on mount/unmount
   return <>
             <div className="flex items-center px-4 py-2 border-b border-gray-800 gap-4">
               <span className="font-bold text-lg">{marketName}</span>
