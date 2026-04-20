@@ -1,11 +1,11 @@
 use std::{os::linux::raw::stat, sync::Arc, time::Duration};
 
-use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
+use axum::{Json, extract::{Query, State}, http::StatusCode, response::IntoResponse};
 use prost::Message;
 use redis::AsyncCommands;
 use serde_json::json;
 use tokio::time::timeout;
-use crate::model::{AppState, exchange_proto::{ExchangeRequest, ExecutionReport, exchange_request::Action}};
+use crate::model::{AppState, GetOpenOrderByUserIdParams, exchange_proto::{ExchangeRequest, ExecutionReport, exchange_request::Action}};
 use futures_util::StreamExt;
 
 
@@ -94,3 +94,18 @@ pub async fn cancel_order(
         }))
     ).into_response()
 }
+
+// pub async fn get_orders_by_userid (
+//     State(state) : State<AppState>,
+//     Query(query_params) : Query<GetOpenOrderByUserIdParams>
+// ) -> impl IntoResponse {
+
+//     let query_str = format!(
+//     "SELECT *
+//     FROM open_orders
+//     WHERE symbol = $1
+//     ORDER BY order_id DESC
+
+//     ");
+
+// }

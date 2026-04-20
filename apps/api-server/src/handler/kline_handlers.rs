@@ -102,9 +102,12 @@ pub async fn get_klines(
          LIMIT $2",
          table_name
     );
+
+    let market = params.symbol as i64;
+    let limt = params.limit as i64;
     let klines = query_as::<_, Kline>(&query_str)
-        .bind(&params.symbol)
-        .bind(&params.limit)
+        .bind(market)
+        .bind(limt)
         .fetch_all(&state.db)
         .await;
 

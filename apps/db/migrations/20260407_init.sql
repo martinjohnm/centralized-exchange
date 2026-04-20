@@ -27,7 +27,7 @@ ADD CONSTRAINT positive_locked CHECK (locked >= 0);
 -- 3. Trade History (TimescaleDB Hypertable)
 CREATE TABLE IF NOT EXISTS trade_history (
     time TIMESTAMPTZ NOT NULL,
-    symbol TEXT NOT NULL, -- 'BTC_USDT' or 'ETH_USDT'
+    symbol INT NOT NULL, -- 'BTC_USDT' or 'ETH_USDT'
     price NUMERIC(38, 18) NOT NULL,
     volume NUMERIC(38, 18) NOT NULL,
 
@@ -52,7 +52,7 @@ CREATE INDEX IF NOT EXISTS idx_trade_maker_user ON trade_history (maker_user_id,
 CREATE TABLE IF NOT EXISTS open_orders (
     order_id BIGINT PRIMARY KEY,
     user_id BIGINT NOT NULL,
-    symbol TEXT NOT NULL,
+    symbol INT NOT NULL,
     side TEXT NOT NULL,
     price NUMERIC(38, 18) NOT NULL,
     quantity NUMERIC(38, 18) NOT NULL,

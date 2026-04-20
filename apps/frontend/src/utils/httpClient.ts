@@ -1,11 +1,12 @@
 import axios from "axios"
 import type { RawKline } from "../types/KlineTypes";
 import type { CandlestickData, UTCTimestamp } from "lightweight-charts";
+import type { MarketId } from "../generated/exchange";
 
 const BE_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000"
 
 
-export async function getKlines(symbol : string, interval: string, limit: number): Promise<CandlestickData[]> {
+export async function getKlines(symbol : MarketId, interval: string, limit: number): Promise<CandlestickData[]> {
     const response = await axios.get<RawKline[]>(
         `${BE_URL}/get-klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
     );

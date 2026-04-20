@@ -52,7 +52,7 @@ pub async fn start_order_worker(pool : sqlx::Pool<sqlx::Postgres>, redis_client:
                 let quantity = Decimal::from_str(&ord.quantity).unwrap_or(Decimal::ZERO);
                 let filled = Decimal::from_str(&ord.filled_quantity).unwrap_or(Decimal::ZERO);
                 let side_str = if ord.side == Side::Buy as i32 { "BUY" } else { "SELL" };
-                let symbol = format!("{:?}", ord.market);
+                let symbol = ord.market;
 
                 b.push_bind(ord.engine_id as i64)
                 .push_bind(ord.user_id as i64)

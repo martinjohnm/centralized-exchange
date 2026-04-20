@@ -40,11 +40,16 @@ pub struct Kline {
 
 #[derive(Deserialize, Debug)]
 pub struct KlineParams {
-    pub symbol: String,
+    pub symbol: i64,
     pub interval: String, // e.g., "1m", "1h"
     pub limit : i64
 }
 
+#[derive(Deserialize, Debug)]
+pub struct GetOpenOrderByUserIdParams {
+    pub userid : i64,
+    pub symbol : String
+}
 
 // 1. Order Request struct
 #[derive(Debug, Clone)]

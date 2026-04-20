@@ -4,7 +4,7 @@ import { getKlines } from "../utils/httpClient";
 import { SignalingManager } from "../utils/SignalingManager";
 import type { CandlestickData } from "lightweight-charts";
 import { ChartManager } from "../utils/ChartManager";
-import { Candle, StreamType } from "../generated/exchange";
+import { Candle, MarketId, StreamType } from "../generated/exchange";
 
 
 const INITIAL_CANDLE_COUNT = 200;
@@ -36,7 +36,7 @@ export const TradeView = ({market} : {market: string}) => {
             let klines: CandlestickData[] = [];
             
             try {
-                klines = await getKlines("1_3", candleTime, INITIAL_CANDLE_COUNT);
+                klines = await getKlines(MarketId.BTC_USDT, candleTime, INITIAL_CANDLE_COUNT);
                 
             } catch (e) {
                 console.log(e);

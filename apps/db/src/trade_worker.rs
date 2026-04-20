@@ -52,7 +52,7 @@ pub async fn start_trade_worker(pool : sqlx::Pool<sqlx::Postgres>, client: redis
                 let price = Decimal::from_str(&trade.price).unwrap_or(Decimal::ZERO);
                 let quantity = Decimal::from_str(&trade.quantity).unwrap_or(Decimal::ZERO);
                 let side_str = if trade.taker_side == Side::Buy as i32 { "BUY" } else { "SELL" };
-                let symbol = format!("{:?}_{:?}", trade.base, trade.quote);
+                let symbol = trade.market;
 
                 b.push_bind(datetime)
                  .push_bind(symbol)
